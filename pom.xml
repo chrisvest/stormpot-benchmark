@@ -123,7 +123,7 @@
   </profiles>
   
   <properties>
-    <pools>queue,stack,generic</pools>
+    <pools>queue,blaze,stack,generic,furious</pools>
     <pool.size>10</pool.size>
     <trial.time>500</trial.time>
     <obj.ttl>300000</obj.ttl>

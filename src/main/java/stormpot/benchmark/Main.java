@@ -16,7 +16,7 @@ public class Main {
       explain("throughput-multi", "Multi-threaded throughput");
       System.out.print("#\n# Additionally, the following options may be " +
       		"given to any benchmark:\n");
-      explainAuxiliary("pools=queue,stack,generic",
+      explainAuxiliary("pools=queue,blaze,stack,generic,furious",
           "Comma-separated list of pools to benchmark.");
       explainAuxiliary("pool.size=10",
           "Number of objects to initialise the pools with.");

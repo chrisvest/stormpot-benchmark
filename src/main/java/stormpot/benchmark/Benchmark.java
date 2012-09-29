@@ -17,6 +17,9 @@ public abstract class Benchmark {
     if (pools.contains("queue")) {
       benches.add(new QueuePoolBench());
     }
+    if (pools.contains("blaze")) {
+      benches.add(new BlazePoolBench());
+    }
     if (pools.contains("stack")) {
       benches.add(new CmnsStackPoolBench());
     }
