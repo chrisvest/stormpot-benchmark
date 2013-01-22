@@ -6,10 +6,11 @@ import java.util.List;
 import java.util.Random;
 
 public abstract class Benchmark {
-  private static final Random rnd = new Random();
-  private static final int SIZE = Integer.getInteger("pool.size");
-  private static final long TRIAL_TIME_MILLIS = Long.getLong("trial.time");
-  private static final long OBJ_TTL_MILLIS = Long.getLong("obj.ttl");
+  static final Random rnd = new Random();
+  static final int SIZE = Integer.getInteger("pool.size");
+  static final long TRIAL_TIME_MILLIS = Long.getLong("trial.time");
+  static final long OBJ_TTL_MILLIS = Long.getLong("obj.ttl");
+  static final boolean RECORD_LATENCY = Boolean.getBoolean("record.latency");
 
   protected static Bench[] buildPoolList() {
     List<String> pools = Arrays.asList(System.getProperty("pools").split(","));
@@ -52,12 +53,19 @@ public abstract class Benchmark {
     long start;
     long end = 0;
     for (int i = 0; i < cycles; i++) {
-      start = System.currentTimeMillis();
+      start = now();
       bench.claimAndRelease();
-      end = System.currentTimeMillis();
+      end = now();
       bench.recordTime(end - start);
     }
-    return end;
+    return end == 0? System.currentTimeMillis() : end;
+  }
+
+  protected static long now() {
+    if (RECORD_LATENCY) {
+      return System.currentTimeMillis();
+    }
+    return 0;
   }
 
   protected abstract String getBenchmarkName();

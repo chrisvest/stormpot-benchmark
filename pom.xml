@@ -112,8 +112,10 @@
                     <argument>-Dtrial.time=${trial.time}</argument>
                     <argument>-Dobj.ttl=${obj.ttl}</argument>
                     <argument>-Dhelp=${help}</argument>
+                    <argument>-Drecord.latency=${record.latency}</argument>
                     <argument>-Dthroughput-single=${throughput-single}</argument>
                     <argument>-Dthroughput-multi=${throughput-multi}</argument>
+                    <argument>-Dmessage-passing=${message-passing}</argument>
                     <argument>-classpath</argument>
                     <classpath />
                     <argument>stormpot.benchmark.Main</argument>
@@ -163,6 +165,7 @@
     <pool.size>10</pool.size>
     <trial.time>500</trial.time>
     <obj.ttl>300000</obj.ttl>
+    <record.latency>true</record.latency>
     <report.msg>{:pool "%s", :trials %7d, :period-ms %3d, :ops-sec %7.0f, :lat-max %3d, :lat-mean %.6f, :lat-min %s, :lat-stddev %.6f}%n</report.msg>
 <!--     <report.msg>%s,%7d,%3d,%7.0f,%3d,%.6f,%s,%.6f%n</report.msg> -->
   </properties>

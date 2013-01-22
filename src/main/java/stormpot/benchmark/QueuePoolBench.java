@@ -9,7 +9,7 @@ import stormpot.qpool.QueuePool;
 
 public class QueuePoolBench extends Bench {
   private static final Timeout timeout =
-      new Timeout(1000, TimeUnit.MILLISECONDS);
+      new Timeout(1, TimeUnit.MINUTES);
   
   private QueuePool<MyPoolable> pool;
 

@@ -14,6 +14,7 @@ public class Main {
           "# How to use the benchmark tool:\n");
       explain("throughput-single", "Single-threaded throughput");
       explain("throughput-multi", "Multi-threaded throughput");
+      explain("message-passing", "Seperate dedicated claim & release threads.");
       System.out.print("#\n# Additionally, the following options may be " +
       		"given to any benchmark:\n");
       explainAuxiliary("pools=queue,blaze,stack,generic,furious",
@@ -28,6 +29,8 @@ public class Main {
           "The results reporting message format.");
       explainAuxiliary("thread.count=<core-count>",
           "The number of worker threads used in multi-threaded benchmarks.");
+      explainAuxiliary("record.latency",
+          "Whether or not to record the latency of individual operations.");
       System.out.print(
           "#######################################\n");
       return;
@@ -36,6 +39,8 @@ public class Main {
       benchmark = new SingleThreadedThroughputBenchmark();
     } else if (prop("throughput-multi")) {
       benchmark = new MultiThreadedThroughputBenchmark();
+    } else if (prop("message-passing")) {
+      benchmark = new MessagePassingBenchmark();
     }
     
     if (benchmark != null) {
