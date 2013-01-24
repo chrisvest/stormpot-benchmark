@@ -23,8 +23,12 @@ public abstract class CmnsPoolBench extends Bench {
   }
 
   @Override
-  public void release(Object object) throws Exception {
-    pool.returnObject((MyPoolable) object);
+  public void release(Object object) {
+    try {
+      pool.returnObject((MyPoolable) object);
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Override

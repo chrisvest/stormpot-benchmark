@@ -36,7 +36,7 @@ public class FuriousBench extends Bench {
   }
 
   @Override
-  public void release(Object object) throws Exception {
+  public void release(Object object) {
     pool.returnObj((MyPoolable) object);
   }
 }

@@ -1,9 +1,13 @@
 package stormpot.benchmark;
 
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+
 import uk.co.real_logic.queues.OneToOneConcurrentArrayQueue3;
 
 public class MessagePassingBenchmark extends Benchmark {
-  private static final Object POISON_PILL = new Object();
+
+  private static final int REPITITIONS = 10 * 1000 * 1000;
 
   @Override
   protected String getBenchmarkName() {
@@ -12,59 +16,66 @@ public class MessagePassingBenchmark extends Benchmark {
 
   @Override
   protected int[] warmupCycles() {
-    return new int[] {1, 11, 1, 1};
+    return new int[] {1, 11, 1, 8, 1};
   }
   
-  private OneToOneConcurrentArrayQueue3<Object> queue;
-
   @Override
-  protected void beforeBenchmark(final Bench bench, long trialTimeMillis) {
-    super.beforeBenchmark(bench, trialTimeMillis);
-    queue = new OneToOneConcurrentArrayQueue3<Object>(SIZE);
-    Runnable releaser = new Runnable() {
-      @Override
-      public void run() {
-        for (;;) {
-          Object obj;
-          do {
-            obj = queue.poll();
-          } while (obj == null);
-          if (obj == POISON_PILL) {
-            return;
-          }
-          try {
-            bench.release(obj);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        }
-      }
-    };
-    new Thread(releaser).start();
+  protected void warmup(Bench bench, int steps) throws Exception {
+    System.out.println("Warming up with " + steps + " mio. repititions...");
+    benchmark(steps * 1000 * 1000, bench);
   }
 
   @Override
   protected void benchmark(Bench bench, long trialTimeMillis) throws Exception {
+    int repititions = REPITITIONS;
+    benchmark(repititions, bench);
+  }
+
+  private void benchmark(int repititions, Bench bench) throws Exception {
+    bench.recordTime(0);
+//    final Queue<Object> queue = new ArrayBlockingQueue<Object>(SIZE);
+    final Queue<Object> queue = new OneToOneConcurrentArrayQueue3<Object>(SIZE);
+    Thread releaser = new Thread(new Releaser(queue, repititions, bench));
+    releaser.start();
     long start = System.currentTimeMillis();
-    long deadline = start + trialTimeMillis;
-    long end = 0L;
-    do {
-      end = cycles(bench, 100);
-    } while (end < deadline);
-    queue.offer(POISON_PILL);
+    
+    cycles(bench, repititions, queue);
+    
+    releaser.join();
+    long end = System.currentTimeMillis();
+    bench.setTrials(repititions);
     bench.recordPeriod(end - start);
   }
 
-  private long cycles(Bench bench, int times) throws Exception {
-    long start;
-    long end = 0;
-    for (int i = 0; i < times; i++) {
-      start = now();
+  private void cycles(Bench bench, int times, Queue<Object> queue) throws Exception {
+    for (int i = 0; i <= times; i++) {
       Object obj = bench.claim();
-      queue.offer(obj);
-      end = now();
-      bench.recordTime(end - start);
+      while (!queue.offer(obj)) {
+        Thread.yield();
+      }
     }
-    return end == 0? System.currentTimeMillis() : end;
+  }
+  
+  public class Releaser implements Runnable {
+    private final Queue<Object> queue;
+    private final int repititions;
+    private final Bench bench;
+
+    public Releaser(Queue<Object> queue, int repititions, Bench bench) {
+      this.queue = queue;
+      this.repititions = repititions;
+      this.bench = bench;
+    }
+
+    @Override
+    public void run() {
+      Object obj;
+      for (int i = 0; i <= repititions; i++) {
+        while (null == (obj = queue.poll())) {
+          Thread.yield();
+        }
+        bench.release(obj);
+      }
+    }
   }
 }

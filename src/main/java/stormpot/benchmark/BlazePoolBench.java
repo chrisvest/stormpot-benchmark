@@ -29,7 +29,7 @@ public class BlazePoolBench extends Bench {
   }
 
   @Override
-  public void release(Object object) throws Exception {
+  public void release(Object object) {
     ((MyPoolable) object).release();
   }
 

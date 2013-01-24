@@ -10,7 +10,7 @@ public abstract class Bench {
 
   public abstract void primeWithSize(int size, long objTtlMillis) throws Exception;
   public abstract Object claim() throws Exception;
-  public abstract void release(Object object) throws Exception;
+  public abstract void release(Object object);
   
   public void claimAndRelease() throws Exception {
     Object obj = claim();
@@ -76,5 +76,10 @@ public abstract class Bench {
   
   public String getName() {
     return getClass().getSimpleName();
+  }
+  
+  public void setTrials(long trials) {
+    this.trials.reset();
+    this.trials.add(trials);
   }
 }
