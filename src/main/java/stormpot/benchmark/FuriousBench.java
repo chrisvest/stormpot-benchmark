@@ -39,4 +39,9 @@ public class FuriousBench extends Bench {
   public void release(Object object) {
     pool.returnObj((MyPoolable) object);
   }
+
+  @Override
+  public String getName() {
+    return "FuriousPool";
+  }
 }

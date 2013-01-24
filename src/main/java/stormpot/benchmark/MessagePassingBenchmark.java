@@ -1,7 +1,6 @@
 package stormpot.benchmark;
 
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import uk.co.real_logic.queues.OneToOneConcurrentArrayQueue3;
 
@@ -33,7 +32,6 @@ public class MessagePassingBenchmark extends Benchmark {
 
   private void benchmark(int repititions, Bench bench) throws Exception {
     bench.recordTime(0);
-//    final Queue<Object> queue = new ArrayBlockingQueue<Object>(SIZE);
     final Queue<Object> queue = new OneToOneConcurrentArrayQueue3<Object>(SIZE);
     Thread releaser = new Thread(new Releaser(queue, repititions, bench));
     releaser.start();
