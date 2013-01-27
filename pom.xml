@@ -35,8 +35,6 @@
       <groupId>com.github.giltene</groupId>
       <artifactId>HdrHistogram</artifactId>
       <version>94d7c046605ff744734492c30c8a34b01521992a</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/HdrHistogram.jar</systemPath>
     </dependency>
   </dependencies>
 
@@ -46,6 +44,10 @@
       <id>oss.sonatype</id>
       <name>Sonatype repository</name>
       <url>http://oss.sonatype.org/content/groups/public</url>
+    </repository>
+    <repository>
+      <id>project.local</id>
+      <url>file://${basedir}/lib</url>
     </repository>
   </repositories>
 
@@ -120,6 +122,7 @@
                     <argument>-Dobj.ttl=${obj.ttl}</argument>
                     <argument>-Dhelp=${help}</argument>
                     <argument>-Drecord.latency=${record.latency}</argument>
+                    <argument>-Drecord.latency.histogram=${record.latency.histogram}</argument>
                     <argument>-Dthroughput-single=${throughput-single}</argument>
                     <argument>-Dthroughput-multi=${throughput-multi}</argument>
                     <argument>-Dmessage-passing=${message-passing}</argument>
@@ -173,6 +176,7 @@
     <trial.time>500</trial.time>
     <obj.ttl>300000</obj.ttl>
     <record.latency>true</record.latency>
+    <record.latency.histogram>false</record.latency.histogram>
     <report.msg>{:pool "%s", :trials %7d, :period-ms %3d, :ops-sec %7.0f, :lat-max %3d, :lat-mean %.6f, :lat-min %s, :lat-stddev %.6f}%n</report.msg>
 <!--     <report.msg>%s,%7d,%3d,%7.0f,%3d,%.6f,%s,%.6f%n</report.msg> -->
   </properties>
