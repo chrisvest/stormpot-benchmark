@@ -73,7 +73,7 @@ public abstract class Bench {
         System.out.println("Warning: Histogram overflow!");
       }
       HistogramData data = histogram.getHistogramData();
-      data.outputPercentileDistribution(System.out, 10, 10.0);
+      data.outputPercentileDistribution(System.out, 1, 1.0);
     }
   }
   
