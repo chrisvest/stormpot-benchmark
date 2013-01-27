@@ -20,7 +20,6 @@ import stormpot.qpool.QueuePool;
  * Exercise the pools so we can look at them under a microscope.
  * 
  * @author cvh
- *
  */
 public class CpuMonitoring {
   private static final int ITERATIONS = 100000;
