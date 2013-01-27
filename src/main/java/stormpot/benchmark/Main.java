@@ -29,8 +29,10 @@ public class Main {
           "The results reporting message format.");
       explainAuxiliary("thread.count=<core-count>",
           "The number of worker threads used in multi-threaded benchmarks.");
-      explainAuxiliary("record.latency",
+      explainAuxiliary("record.latency=true",
           "Whether or not to record the latency of individual operations.");
+      explainAuxiliary("record.latency.histogram=false",
+          "Whether or not to record and print a histogram of the latency.");
       System.out.print(
           "#######################################\n");
       return;

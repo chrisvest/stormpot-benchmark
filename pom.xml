@@ -108,7 +108,8 @@
                 -->
                   <executable>java</executable>
                   <arguments>
-                    <argument>-XX:+PrintCompilation</argument>
+<!--                     <argument>-XX:+PrintCompilation</argument> -->
+<!--                     <argument>-XX:+PrintGC</argument> -->
 <!--                     <argument>-XX:+UnlockDiagnosticVMOptions</argument> -->
 <!--                     <argument>-XX:+PrintOptoAssembly</argument> -->
 <!--                     <argument>-XX:+PrintInlining</argument> -->
@@ -177,8 +178,7 @@
     <obj.ttl>300000</obj.ttl>
     <record.latency>true</record.latency>
     <record.latency.histogram>false</record.latency.histogram>
-    <report.msg>{:pool "%s", :trials %7d, :period-ms %3d, :ops-sec %7.0f, :lat-max %3d, :lat-mean %.6f, :lat-min %s, :lat-stddev %.6f}%n</report.msg>
-<!--     <report.msg>%s,%7d,%3d,%7.0f,%3d,%.6f,%s,%.6f%n</report.msg> -->
+    <report.msg>{:pool "%s", :trials %7d, :period-ms %3d, :ops-sec %7.0f, :lat-max %3f, :lat-mean %.6f, :lat-min %s}%n</report.msg>
   </properties>
 </project>
 

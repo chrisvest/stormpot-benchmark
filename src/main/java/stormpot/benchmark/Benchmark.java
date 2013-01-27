@@ -10,7 +10,6 @@ public abstract class Benchmark {
   static final int SIZE = Integer.getInteger("pool.size");
   static final long TRIAL_TIME_MILLIS = Long.getLong("trial.time");
   static final long OBJ_TTL_MILLIS = Long.getLong("obj.ttl");
-  static final boolean RECORD_LATENCY = Boolean.getBoolean("record.latency");
 
   protected static Bench[] buildPoolList() {
     List<String> pools = Arrays.asList(System.getProperty("pools").split(","));
@@ -49,23 +48,15 @@ public abstract class Benchmark {
     }
   }
 
-  public static long runCycles(Bench bench, int cycles) throws Exception {
+  public static void runCycles(Bench bench, int cycles) throws Exception {
     long start;
     long end = 0;
     for (int i = 0; i < cycles; i++) {
-      start = now();
+      start = bench.now();
       bench.claimAndRelease();
-      end = now();
+      end = bench.now();
       bench.recordTime(end - start);
     }
-    return end == 0? System.currentTimeMillis() : end;
-  }
-
-  protected static long now() {
-    if (RECORD_LATENCY) {
-      return System.currentTimeMillis();
-    }
-    return 0;
   }
 
   protected abstract String getBenchmarkName();

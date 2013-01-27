@@ -18,7 +18,8 @@ public class SingleThreadedThroughputBenchmark extends Benchmark {
     long deadline = start + trialTimeMillis;
     long end = 0L;
     do {
-      end = runCycles(bench, 100);
+      runCycles(bench, 100);
+      end = System.currentTimeMillis();
     } while (end < deadline);
     bench.recordPeriod(end - start);
   }
