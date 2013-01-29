@@ -32,9 +32,9 @@
       <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
-      <groupId>com.github.giltene</groupId>
-      <artifactId>HdrHistogram</artifactId>
-      <version>94d7c046605ff744734492c30c8a34b01521992a</version>
+      <groupId>com.github.chrisvest</groupId>
+      <artifactId>benchkit</artifactId>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
@@ -44,10 +44,6 @@
       <id>oss.sonatype</id>
       <name>Sonatype repository</name>
       <url>http://oss.sonatype.org/content/groups/public</url>
-    </repository>
-    <repository>
-      <id>project.local</id>
-      <url>file://${basedir}/lib</url>
     </repository>
   </repositories>
 
