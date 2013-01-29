@@ -36,10 +36,6 @@ public class SingleThreaded implements Benchmark {
   }
   
   @Override
-  public void setUpSession() {
-  }
-
-  @Override
   public void runSession(Recorder mainRecorder) throws Exception {
     Timeout timeout = TIMEOUT;
     
