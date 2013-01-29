@@ -7,9 +7,9 @@ import stormpot.Config;
 import stormpot.LifecycledPool;
 import stormpot.Slot;
 import stormpot.Timeout;
-import benchkit.Benchmark;
-import benchkit.BenchmarkRunner;
-import benchkit.Recorder;
+import org.benchkit.Benchmark;
+import org.benchkit.BenchmarkRunner;
+import org.benchkit.Recorder;
 import stormpot.bpool.BlazePool;
 import stormpot.qpool.QueuePool;
 
