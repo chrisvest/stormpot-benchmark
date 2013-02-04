@@ -1,68 +1,64 @@
 package stormpot.benchmark;
 
+import org.benchkit.Benchmark;
+import org.benchkit.BenchmarkRunner;
+import org.benchkit.Recorder;
+
 import java.util.Queue;
 
 import uk.co.real_logic.queues.OneToOneConcurrentArrayQueue3;
 
-public class MessagePassingBenchmark extends Benchmark {
+public class MessagePassingBenchmark implements Benchmark {
 
-  private static final int REPITITIONS = 10 * 1000 * 1000;
-
-  @Override
-  protected String getBenchmarkName() {
-    return "Message Passing Benchmark";
-  }
-
-  @Override
-  protected int[] warmupCycles() {
-    return new int[] {1, 11, 1, 8, 1};
-  }
+  private static final int REPITITIONS = 2 * 1000 * 1000;
+  private static final int QUEUE_SIZE = 1024;
   
-  @Override
-  protected void warmup(Bench bench, int steps) throws Exception {
-    System.out.println("Warming up with " + steps + " mio. repititions...");
-    benchmark(steps * 1000 * 1000, bench);
+  private final PoolFactory factory;
+  private Thread releaser;
+  private PoolFacade pool;
+  
+  public MessagePassingBenchmark(PoolFactory factory) {
+    this.factory = factory;
   }
 
   @Override
-  protected void benchmark(Bench bench, long trialTimeMillis) throws Exception {
-    int repititions = REPITITIONS;
-    benchmark(repititions, bench);
+  public void setUp() {
+    this.pool = factory.create(QUEUE_SIZE, 1000);
   }
 
-  private void benchmark(int repititions, Bench bench) throws Exception {
-    bench.recordTime(0);
-    final Queue<Object> queue = new OneToOneConcurrentArrayQueue3<Object>(SIZE);
-    Thread releaser = new Thread(new Releaser(queue, repititions, bench));
+  @Override
+  public void runSession(Recorder recorder) throws Exception {
+    Queue<Object> queue = new OneToOneConcurrentArrayQueue3<Object>(QUEUE_SIZE);
+    releaser = new Thread(new Releaser(queue, REPITITIONS, pool));
     releaser.start();
-    long start = System.currentTimeMillis();
     
-    cycles(bench, repititions, queue);
-    
-    releaser.join();
-    long end = System.currentTimeMillis();
-    bench.setTrials(repititions);
-    bench.recordPeriod(end - start);
-  }
-
-  private void cycles(Bench bench, int times, Queue<Object> queue) throws Exception {
-    for (int i = 0; i <= times; i++) {
-      Object obj = bench.claim();
+    for (int i = 0; i <= REPITITIONS; i++) {
+      long start = recorder.begin();
+      Object obj = pool.claim();
+      recorder.record(start);
       while (!queue.offer(obj)) {
         Thread.yield();
       }
     }
+    
+    releaser.interrupt();
+    releaser.join();
   }
-  
+
+  @Override
+  public void tearDown() throws Exception {
+    factory.shutdown(pool);
+  }
+
   public class Releaser implements Runnable {
     private final Queue<Object> queue;
     private final int repititions;
-    private final Bench bench;
+    private final PoolFacade pool;
 
-    public Releaser(Queue<Object> queue, int repititions, Bench bench) {
+    public Releaser(Queue<Object> queue, int repititions, PoolFacade pool) {
       this.queue = queue;
       this.repititions = repititions;
-      this.bench = bench;
+      this.pool = pool;
     }
 
     @Override
@@ -72,8 +68,16 @@ public class MessagePassingBenchmark extends Benchmark {
         while (null == (obj = queue.poll())) {
           Thread.yield();
         }
-        bench.release(obj);
+        try {
+          pool.release(obj);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
       }
     }
+  }
+  
+  public static void main(String[] args) throws Exception {
+    BenchmarkRunner.run(new MessagePassingBenchmark(PoolFactory.furious));
   }
 }
