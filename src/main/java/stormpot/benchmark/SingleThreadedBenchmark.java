@@ -18,12 +18,12 @@ public class SingleThreadedBenchmark implements Benchmark {
   }
   
   @Override
-  public void runSession(Recorder mainRecorder) throws Exception {
+  public void runSession(Recorder recorder) throws Exception {
     for (int i = 0; i < 1000 * 1000; i++) {
-      long begin = mainRecorder.begin();
+      long begin = recorder.begin();
       Object obj = pool.claim();
       pool.release(obj);
-      mainRecorder.record(begin);
+      recorder.record(begin);
     }
   }
   
