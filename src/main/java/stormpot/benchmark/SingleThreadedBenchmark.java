@@ -8,7 +8,8 @@ public class SingleThreadedBenchmark implements Benchmark {
   private final PoolFactory factory;
   private PoolFacade pool;
 
-  public SingleThreadedBenchmark(PoolFactory factory) {
+  public SingleThreadedBenchmark(
+      @Param("pools") PoolFactory factory) {
     this.factory = factory;
   }
   
