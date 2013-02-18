@@ -19,7 +19,7 @@ public class MessagePassingBenchmark implements Benchmark {
   private PoolFacade pool;
   
   public MessagePassingBenchmark(
-      @Param(value = "pools", defaults = "furious,queue") PoolFactory factory) {
+      @Param(value = "pools", defaults = "furious") PoolFactory factory) {
     this.factory = factory;
   }
 
@@ -34,10 +34,10 @@ public class MessagePassingBenchmark implements Benchmark {
     releaser = new Thread(new Releaser(queue, REPITITIONS, pool));
     releaser.start();
     
+    long start = recorder.begin();
     for (int i = 0; i <= REPITITIONS; i++) {
-      long start = recorder.begin();
       Object obj = pool.claim();
-      recorder.record(start);
+      start = recorder.record(start);
       while (!queue.offer(obj)) {
         Thread.yield();
       }

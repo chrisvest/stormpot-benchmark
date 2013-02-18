@@ -10,7 +10,7 @@ public class SingleThreadedBenchmark implements Benchmark {
   private PoolFacade pool;
 
   public SingleThreadedBenchmark(
-      @Param("pools") PoolFactory factory) {
+      @Param(value = "pools", defaults = "blaze") PoolFactory factory) {
     this.factory = factory;
   }
   
@@ -21,11 +21,11 @@ public class SingleThreadedBenchmark implements Benchmark {
   
   @Override
   public void runSession(Recorder recorder) throws Exception {
+    long start = recorder.begin();
     for (int i = 0; i < 1000 * 1000; i++) {
-      long begin = recorder.begin();
       Object obj = pool.claim();
       pool.release(obj);
-      recorder.record(begin);
+      start = recorder.record(start);
     }
   }
   

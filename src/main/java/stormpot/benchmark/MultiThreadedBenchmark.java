@@ -76,10 +76,10 @@ public class MultiThreadedBenchmark implements Benchmark {
     public void run() {
       try {
         startLatch.await();
+        long start = recorder.begin();
         for (int i = 0; i < ITERATIONS; i++) {
-          long begin = recorder.begin();
           pool.release(pool.claim());
-          recorder.record(begin);
+          start = recorder.record(start);
         }
       } catch (Exception e) {
         e.printStackTrace();
