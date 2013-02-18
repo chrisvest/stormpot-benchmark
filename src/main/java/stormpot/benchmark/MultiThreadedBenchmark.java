@@ -7,34 +7,36 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.benchkit.Benchmark;
-import org.benchkit.BenchmarkRunner;
 import org.benchkit.Recorder;
 
 public class MultiThreadedBenchmark implements Benchmark {
   private static final int ITERATIONS = 2 * 1000 * 1000;
-  private static final int THREADS = 4;
 
   private final PoolFactory factory;
+  private final int threads;
   private ExecutorService executor;
   private PoolFacade pool;
   
-  public MultiThreadedBenchmark(PoolFactory factory) {
+  public MultiThreadedBenchmark(
+      @Param(value = "pools", defaults = "blaze,queue") PoolFactory factory,
+      @Param(value = "threads", defaults = "2,4") int threads) {
     this.factory = factory;
+    this.threads = threads;
   }
 
   @Override
   public void setUp() {
-    executor = Executors.newFixedThreadPool(THREADS);
+    executor = Executors.newFixedThreadPool(threads);
     pool = factory.create(10, 1000);
   }
 
   @Override
   public void runSession(Recorder recorder) throws Exception {
     CountDownLatch startLatch = new CountDownLatch(1);
-    CountDownLatch endLatch = new CountDownLatch(THREADS);
+    CountDownLatch endLatch = new CountDownLatch(threads);
     List<Recorder> subRecorders = new ArrayList<Recorder>();
     
-    for (int i = 0; i < THREADS; i++) {
+    for (int i = 0; i < threads; i++) {
       Recorder subRecorder = recorder.createBlankCopy();
       subRecorders.add(subRecorder);
       executor.execute(new Worker(pool, startLatch, endLatch, subRecorder));
@@ -82,9 +84,5 @@ public class MultiThreadedBenchmark implements Benchmark {
       }
       endLatch.countDown();
     }
-  }
-  
-  public static void main(String[] args) throws Exception {
-    BenchmarkRunner.run(new MultiThreadedBenchmark(PoolFactory.blaze));
   }
 }

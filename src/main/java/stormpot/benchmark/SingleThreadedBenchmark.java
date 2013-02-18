@@ -1,7 +1,6 @@
 package stormpot.benchmark;
 
 import org.benchkit.Benchmark;
-import org.benchkit.BenchmarkRunner;
 import org.benchkit.Recorder;
 
 public class SingleThreadedBenchmark implements Benchmark {
@@ -31,9 +30,5 @@ public class SingleThreadedBenchmark implements Benchmark {
   @Override
   public void tearDown() throws Exception {
     factory.shutdown(pool);
-  }
-
-  public static void main(String[] args) throws Exception {
-    BenchmarkRunner.run(new SingleThreadedBenchmark(PoolFactory.blaze));
   }
 }

@@ -4,6 +4,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -101,7 +102,7 @@ public class Main {
      */
     Seq<Seq<Object>> valueSets = buildValues(paramTypes, paramAnnotations, 0);
     Seq<Seq<Object>> argTree = new Seq<Seq<Object>>(null, null);
-    for (Seq<Object> argValues : valueSets) {
+    for (Seq<Object> argValues : reverse(valueSets)) {
       Seq<Seq<Object>> permutations = null;
       for (Object arg : argValues) for (Seq<Object> argBranch : argTree) {
         Seq<Object> argRoot = new Seq<Object>(arg, argBranch);
@@ -110,6 +111,12 @@ public class Main {
       argTree = permutations;
     }
     return argTree;
+  }
+
+  private static <T> Seq<T> reverse(Seq<T> seq) {
+    List<T> list = seq.into(new ArrayList<T>());
+    Collections.reverse(list);
+    return new Seq<T>(list);
   }
 
   private static Seq<Seq<Object>> buildValues(

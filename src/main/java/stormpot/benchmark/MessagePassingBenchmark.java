@@ -17,7 +17,8 @@ public class MessagePassingBenchmark implements Benchmark {
   private Thread releaser;
   private PoolFacade pool;
   
-  public MessagePassingBenchmark(PoolFactory factory) {
+  public MessagePassingBenchmark(
+      @Param("pools") PoolFactory factory) {
     this.factory = factory;
   }
 
