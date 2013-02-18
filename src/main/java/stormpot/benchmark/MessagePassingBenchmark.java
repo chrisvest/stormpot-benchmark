@@ -2,6 +2,7 @@ package stormpot.benchmark;
 
 import org.benchkit.Benchmark;
 import org.benchkit.BenchmarkRunner;
+import org.benchkit.Param;
 import org.benchkit.Recorder;
 
 import java.util.Queue;
@@ -18,7 +19,7 @@ public class MessagePassingBenchmark implements Benchmark {
   private PoolFacade pool;
   
   public MessagePassingBenchmark(
-      @Param("pools") PoolFactory factory) {
+      @Param(value = "pools", defaults = "furious,queue") PoolFactory factory) {
     this.factory = factory;
   }
 
@@ -79,6 +80,6 @@ public class MessagePassingBenchmark implements Benchmark {
   }
   
   public static void main(String[] args) throws Exception {
-    BenchmarkRunner.run(new MessagePassingBenchmark(PoolFactory.furious));
+    BenchmarkRunner.run(MessagePassingBenchmark.class);
   }
 }

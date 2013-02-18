@@ -7,7 +7,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.benchkit.Benchmark;
+import org.benchkit.BenchmarkRunner;
 import org.benchkit.Recorder;
+import org.benchkit.Param;
 
 public class MultiThreadedBenchmark implements Benchmark {
   private static final int ITERATIONS = 2 * 1000 * 1000;
@@ -84,5 +86,9 @@ public class MultiThreadedBenchmark implements Benchmark {
       }
       endLatch.countDown();
     }
+  }
+  
+  public static void main(String[] args) throws Exception {
+    BenchmarkRunner.run(MultiThreadedBenchmark.class);
   }
 }
