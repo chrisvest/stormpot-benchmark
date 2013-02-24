@@ -17,6 +17,7 @@ package uk.co.real_logic.queues;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+@SuppressWarnings("serial")
 public class PaddedAtomicLong extends AtomicLong
 {
     public PaddedAtomicLong()
