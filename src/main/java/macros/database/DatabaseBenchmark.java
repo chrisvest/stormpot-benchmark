@@ -1,5 +1,7 @@
 package macros.database;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -22,13 +24,14 @@ public class DatabaseBenchmark implements Benchmark {
   private int threads;
   private int poolSize;
   private int iterations;
+  private Database database;
   private DataSource dataSource;
   private ExecutorService executor;
   private DatabaseFacade facade;
 
   public DatabaseBenchmark(
-      @Param(value = "fixture", defaults = "stormpot") Fixture fixture,
-      @Param(value = "threads", defaults = "1,2,3,4") int threads,
+      @Param(value = "fixture", defaults = "stormpot,hibernate") Fixture fixture,
+      @Param(value = "threads", defaults = "4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
       @Param(value = "iterations", defaults = "10000") int iterations,
       @Param(value = "database", defaults = "mysql") Database database) {
@@ -36,29 +39,43 @@ public class DatabaseBenchmark implements Benchmark {
     this.threads = threads;
     this.poolSize = poolSize;
     this.iterations = iterations;
-    this.dataSource = database.createDataSource();
+    this.database = database;
   }
 
   @Override
   public void setUp() throws Exception {
-    executor = Executors.newFixedThreadPool(threads);
-    facade = fixture.init(dataSource, poolSize);
-    facade.clearDatabase();
+    dataSource = database.createDataSource();
+    executor = Executors.newCachedThreadPool();
+    database.createDatabase(dataSource);
+    facade = fixture.init(database, poolSize);
   }
 
   @Override
   public void runSession(Recorder mainRecorder) throws Exception {
+    clearDatabase();
     CountDownLatch startLatch = new CountDownLatch(1);
-    List<Callable<Recorder>> workers = new ArrayList<Callable<Recorder>>();
+    List<Future<Recorder>> recorders = new ArrayList<Future<Recorder>>();
     for (int i = 0; i < threads; i++) {
       Recorder recorder = mainRecorder.createBlankCopy();
-      workers.add(createWorker(startLatch, recorder));
+      Future<Recorder> futureRecorder =
+          executor.submit(createWorker(startLatch, recorder));
+      recorders.add(futureRecorder);
     }
-    List<Future<Recorder>> recorders = executor.invokeAll(workers);
     Thread.yield();
     startLatch.countDown();
     for (Future<Recorder> futureRecorder : recorders) {
       mainRecorder.add(futureRecorder.get());
+    }
+  }
+
+  private void clearDatabase() throws Exception {
+    Connection connection = dataSource.getConnection();
+    try {
+      Statement truncate = connection.createStatement();
+      truncate.executeUpdate("truncate table event");
+      truncate.close();
+    } finally {
+      connection.close();
     }
   }
 

@@ -1,20 +1,18 @@
 package macros.database;
 
-import javax.sql.DataSource;
-
 enum Fixture {
   stormpot {
     @Override
-    public DatabaseFacade init(DataSource dataSource, int poolSize) {
-      return new StormpotDatabaseFacade(dataSource, poolSize);
+    public DatabaseFacade init(Database database, int poolSize) {
+      return new StormpotDatabaseFacade(database, poolSize);
     }
   },
   hibernate {
     @Override
-    public DatabaseFacade init(DataSource dataSource, int poolSize) {
-      return new HibernateDatabaseFacade(dataSource, poolSize);
+    public DatabaseFacade init(Database database, int poolSize) {
+      return new HibernateDatabaseFacade(database, poolSize);
     }
   };
   
-  public abstract DatabaseFacade init(DataSource dataSource, int poolSize);
+  public abstract DatabaseFacade init(Database database, int poolSize);
 }
