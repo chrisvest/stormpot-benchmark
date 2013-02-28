@@ -34,7 +34,7 @@ public class DatabaseBenchmark implements Benchmark {
       @Param(value = "threads", defaults = "4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
       @Param(value = "iterations", defaults = "10000") int iterations,
-      @Param(value = "database", defaults = "mysql") Database database) {
+      @Param(value = "database", defaults = "hsqldb") Database database) {
     this.fixture = fixture;
     this.threads = threads;
     this.poolSize = poolSize;
@@ -108,6 +108,7 @@ public class DatabaseBenchmark implements Benchmark {
       throw new IllegalStateException("Executor did not shut down fast enough");
     }
     facade.close();
+    database.shutdownAll();
   }
 
   public static void main(String[] args) throws Exception {
