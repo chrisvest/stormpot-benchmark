@@ -14,33 +14,18 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import org.benchkit.Benchmark;
-import org.benchkit.BenchmarkRunner;
-import org.benchkit.Param;
 import org.benchkit.Recorder;
 
-public class DatabaseBenchmark implements Benchmark {
-  
-  private Fixture fixture;
-  private int threads;
-  private int poolSize;
-  private int iterations;
-  private Database database;
-  private DataSource dataSource;
-  private ExecutorService executor;
-  private DatabaseFacade facade;
+public abstract class DatabaseBenchmark implements Benchmark {
 
-  public DatabaseBenchmark(
-      @Param(value = "fixture", defaults = "stormpot,hibernate") Fixture fixture,
-      @Param(value = "threads", defaults = "4") int threads,
-      @Param(value = "poolSize", defaults = "10") int poolSize,
-      @Param(value = "iterations", defaults = "10000") int iterations,
-      @Param(value = "database", defaults = "hsqldb") Database database) {
-    this.fixture = fixture;
-    this.threads = threads;
-    this.poolSize = poolSize;
-    this.iterations = iterations;
-    this.database = database;
-  }
+  protected Fixture fixture;
+  protected int threads;
+  protected int poolSize;
+  protected int iterations;
+  protected Database database;
+  protected DataSource dataSource;
+  protected ExecutorService executor;
+  protected DatabaseFacade facade;
 
   @Override
   public void setUp() throws Exception {
@@ -92,14 +77,7 @@ public class DatabaseBenchmark implements Benchmark {
     };
   }
   
-  private void runBenchmark(Recorder recorder) throws Exception {
-    long begin = recorder.begin();
-    String name = Thread.currentThread().getName();
-    for (int i = 0; i < iterations; i++) {
-      facade.insertRow(name, i);
-      begin = recorder.record(begin);
-    }
-  }
+  protected abstract void runBenchmark(Recorder recorder) throws Exception;
 
   @Override
   public void tearDown() throws Exception {
@@ -109,9 +87,5 @@ public class DatabaseBenchmark implements Benchmark {
     }
     facade.close();
     database.shutdownAll();
-  }
-
-  public static void main(String[] args) throws Exception {
-    BenchmarkRunner.run(DatabaseBenchmark.class);
   }
 }
