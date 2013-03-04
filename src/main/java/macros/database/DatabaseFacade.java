@@ -1,9 +1,9 @@
 package macros.database;
 
-interface DatabaseFacade {
+public interface DatabaseFacade {
 
   void close() throws Exception;
 
-  void insertRow(String txt, int x) throws Exception;
+  void insertLogRow(String txt, int x) throws Exception;
   
 }

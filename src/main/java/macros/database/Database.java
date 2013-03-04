@@ -33,8 +33,8 @@ public enum Database {
     public void createDatabase(DataSource dataSource) throws Exception {
       Connection con = dataSource.getConnection();
       try {
-        update(con, "drop table if exists event");
-        update(con, "create table event (" +
+        update(con, "drop table if exists log");
+        update(con, "create table log (" +
             "id int auto_increment primary key, " +
             "txt varchar(255), x int) " +
             "engine = MyISAM");
@@ -62,9 +62,9 @@ public enum Database {
       Connection con = dataSource.getConnection();
       try {
         try {
-          update(con, "drop table event");
+          update(con, "drop table log");
         } catch (Exception _) {} // ignored in the absence of 'if exists'
-        update(con, "create table event (" +
+        update(con, "create table log (" +
             "id int generated always as identity," +
             "txt varchar(255), x int, primary key (id))");
       } finally {
@@ -100,9 +100,9 @@ public enum Database {
       Connection con = dataSource.getConnection();
       try {
         try {
-          update(con, "drop table event");
+          update(con, "drop table log");
         } catch (Exception _) {} // ignored in the absence of 'if exists'
-        update(con, "create table event (" +
+        update(con, "create table log (" +
             "id int generated always as identity," +
             "txt varchar(255), x int, primary key (id))");
       } finally {

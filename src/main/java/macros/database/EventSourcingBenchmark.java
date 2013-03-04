@@ -1,14 +1,15 @@
 package macros.database;
 
-
+import java.util.Random;
 
 import org.benchkit.BenchmarkRunner;
 import org.benchkit.Param;
 import org.benchkit.Recorder;
 
-public class SimpleInsertionBenchmark extends DatabaseBenchmark {
+public class EventSourcingBenchmark extends DatabaseBenchmark {
+  private final Random randomSource;
   
-  public SimpleInsertionBenchmark(
+  public EventSourcingBenchmark(
       @Param(value = "fixture", defaults = "stormpot,hibernate") Fixture fixture,
       @Param(value = "threads", defaults = "4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
@@ -19,19 +20,26 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
     this.poolSize = poolSize;
     this.iterations = iterations;
     this.database = database;
+    randomSource = new Random();
   }
 
   @Override
   protected void runBenchmark(Recorder recorder) throws Exception {
+    XorShiftRandom prng = new XorShiftRandom(randomSource.nextInt());
+    
     long begin = recorder.begin();
     String name = Thread.currentThread().getName();
     for (int i = 0; i < iterations; i++) {
+      int entityId = prng.nextInt() & 255;
+      
+      
+      
       facade.insertLogRow(name, i);
       begin = recorder.record(begin);
     }
   }
-
+  
   public static void main(String[] args) throws Exception {
-    BenchmarkRunner.run(SimpleInsertionBenchmark.class);
+    BenchmarkRunner.run(EventSourcingBenchmark.class);
   }
 }

@@ -1,5 +1,8 @@
 package macros.database;
 
+import macros.database.hibernate.HibernateDatabaseFacade;
+import macros.database.stormpot.StormpotDatabaseFacade;
+
 enum Fixture {
   stormpot {
     @Override

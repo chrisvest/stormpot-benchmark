@@ -1,48 +1,20 @@
-package macros.database;
+package macros.database.stormpot;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
+import macros.database.Database;
+import macros.database.DatabaseFacade;
+
 import stormpot.Allocator;
 import stormpot.Config;
 import stormpot.LifecycledPool;
-import stormpot.Poolable;
 import stormpot.Slot;
 import stormpot.Timeout;
 import stormpot.bpool.BlazePool;
 
 public class StormpotDatabaseFacade implements DatabaseFacade {
-  private static class Dao implements Poolable {
-    private final Slot slot;
-    private final Connection connection;
-    private final PreparedStatement insertRowStatement;
-    
-    public Dao(Slot slot, Connection connection) throws Exception {
-      this.slot = slot;
-      this.connection = connection;
-      insertRowStatement = connection.prepareStatement(
-          "insert into event (txt, x) values (?, ?)");
-    }
-
-    @Override
-    public void release() {
-      slot.release(this);
-    }
-
-    public void close() throws Exception {
-      connection.close();
-    }
-
-    public void insertRow(String txt, int x) throws Exception {
-      insertRowStatement.setString(1, txt);
-      insertRowStatement.setInt(2, x);
-      insertRowStatement.execute();
-    }
-  }
-  
   private final LifecycledPool<Dao> pool;
   private final Timeout timeout;
 
@@ -70,7 +42,7 @@ public class StormpotDatabaseFacade implements DatabaseFacade {
   }
 
   @Override
-  public void insertRow(String txt, int x) throws Exception {
+  public void insertLogRow(String txt, int x) throws Exception {
     Dao dao = pool.claim(timeout);
     try {
       dao.insertRow(txt, x);
