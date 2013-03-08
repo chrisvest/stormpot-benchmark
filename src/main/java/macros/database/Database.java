@@ -14,7 +14,7 @@ import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
 public enum Database {
   mysql(
-      "jdbc:mysql://localhost:3306/test?autoCommit=true",
+      "jdbc:mysql://localhost:3306/test",
       "org.hibernate.dialect.MySQL5Dialect",
       "com.mysql.jdbc.Driver",
       "root",
@@ -38,6 +38,14 @@ public enum Database {
             "id int auto_increment primary key, " +
             "txt varchar(255), x int) " +
             "engine = MyISAM");
+        update(con, "drop table if exists event");
+        update(con, "create table event (" +
+        		"id int auto_increment primary key, " +
+        		"entity_id int not null, " +
+        		"type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
+        		"payload varchar(4000) not null," +
+        		"index entity_lookup using btree (entity_id asc, id desc)) " +
+        		"engine = InnoDB");
       } finally {
         con.close();
       }

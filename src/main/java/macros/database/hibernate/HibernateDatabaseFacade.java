@@ -1,5 +1,8 @@
 package macros.database.hibernate;
 
+import java.util.List;
+import java.util.Properties;
+
 import macros.database.Database;
 import macros.database.DatabaseFacade;
 
@@ -44,5 +47,41 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
     } finally {
       session.close();
     }
+  }
+
+  @Override
+  public void updateEntity(Object tx, int entityId, Properties nameChange) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public Object begin() throws Exception {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public void commit(Object tx) throws Exception {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public List<Properties> getRecentUpdates(Object tx, int entityId, int count) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public Properties getEntity(Object tx, int entityId) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public void rollback(Object tx) throws Exception {
+    // TODO Auto-generated method stub
+    
   }
 }
