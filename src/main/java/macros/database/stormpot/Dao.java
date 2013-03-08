@@ -31,7 +31,7 @@ class Dao implements Poolable {
     insertLog = connection.prepareStatement(
         "insert into log (txt, x) values (?, ?)");
     recentEvents = connection.prepareStatement(
-        "select * from event where entity_id = ? order by id asc limit ?");
+        "select * from event where entity_id = ? order by id desc limit ?");
     insertEvent = connection.prepareStatement(
         "insert into event (entity_id, type, payload) values (?, ?, ?)");
   }
@@ -72,7 +72,7 @@ class Dao implements Poolable {
   }
 
   public List<Event> getRecentEvents(int entityId, int count) throws Exception {
-    List<Event> events = new ArrayList<Event>(10);
+    List<Event> events = new ArrayList<Event>(count);
     recentEvents.setInt(1, entityId);
     recentEvents.setInt(2, count);
     ResultSet result = recentEvents.executeQuery();
@@ -83,6 +83,7 @@ class Dao implements Poolable {
           result.getInt("type"),
           result.getString("payload")));
     }
+    Collections.reverse(events);
     return events;
   }
 
@@ -117,9 +118,6 @@ class Dao implements Poolable {
 
   public Properties buildSnapshot(List<Event> events) throws IOException {
     Properties snapshot = new Properties();
-    // create defensive copy because Collections.reverse is destructive:
-    events = new ArrayList<Event>(events);
-    Collections.reverse(events);
     // there's no need to load up events prior to the most recent snapshot,
     // so we skip them
 //    boolean snapshotReached = false;

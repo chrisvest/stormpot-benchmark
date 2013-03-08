@@ -15,7 +15,7 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
       @Param(value = "fixture", defaults = "stormpot") Fixture fixture,
       @Param(value = "threads", defaults = "4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
-      @Param(value = "iterations", defaults = "1000") int iterations,
+      @Param(value = "iterations", defaults = "200") int iterations,
       @Param(value = "database", defaults = "mysql") Database database) {
     this.fixture = fixture;
     this.threads = threads;
@@ -30,12 +30,12 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
     XorShiftRandom prng = new XorShiftRandom(randomSource.nextInt());
     
     long begin = recorder.begin();
-    String threadName = Thread.currentThread().getName();
+    Thread currentThread = Thread.currentThread();
+    String threadName = currentThread.getName();
     for (int i = 0; i < iterations; i++) {
-      int entityId = prng.nextInt() & 255;
-      
+      int entityId = (prng.nextInt() & 64) + ((int) currentThread.getId() * 64);
       String name = threadName + "-" + i;
-      int age = prng.nextInt() % 100;
+      int age = Math.abs(prng.nextInt()) % 100;
       
       Properties nameChange = new Properties();
       nameChange.setProperty("name", name);
@@ -53,7 +53,7 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
     }
   }
 
-  protected boolean runTransaction(int entityId, Properties nameChange,
+  private boolean runTransaction(int entityId, Properties nameChange,
       Properties ageChange) throws AssertionError, Exception {
     Object tx = facade.begin();
     try {
@@ -88,7 +88,7 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
     Properties actualEntity = facade.getEntity(tx, entityId);
     if (!actualEntity.equals(expectedEntity)) {
       throw new AssertionError("Expected entity: " + expectedEntity +
-          "but was: " + actualEntity);
+          " but was: " + actualEntity);
     }
   }
   
