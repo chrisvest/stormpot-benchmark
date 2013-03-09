@@ -58,6 +58,7 @@ public abstract class DatabaseBenchmark implements Benchmark {
     try {
       Statement truncate = connection.createStatement();
       truncate.executeUpdate("truncate table log");
+      truncate.executeUpdate("truncate table event");
       truncate.close();
     } finally {
       connection.close();
