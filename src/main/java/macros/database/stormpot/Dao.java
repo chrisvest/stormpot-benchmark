@@ -118,16 +118,8 @@ class Dao implements Poolable {
 
   public Properties buildSnapshot(List<Event> events) throws IOException {
     Properties snapshot = new Properties();
-    // there's no need to load up events prior to the most recent snapshot,
-    // so we skip them
-//    boolean snapshotReached = false;
     for (Event event : events) {
-//      if (!snapshotReached && event.type == Event.TYPE_SNAPSHOT) {
-//        snapshotReached = true;
-//      }
-//      if (snapshotReached) {
         snapshot.load(new StringReader(event.payload));
-//      }
     }
     return snapshot;
   }
