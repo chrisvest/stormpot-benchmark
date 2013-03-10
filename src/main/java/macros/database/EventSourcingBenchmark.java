@@ -6,7 +6,9 @@ import java.util.Random;
 
 import org.benchkit.BenchmarkRunner;
 import org.benchkit.Param;
+import org.benchkit.PrintingReporter;
 import org.benchkit.Recorder;
+import org.benchkit.Reporter;
 
 public class EventSourcingBenchmark extends DatabaseBenchmark {
   private final Random randomSource;
@@ -15,7 +17,7 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
       @Param(value = "fixture", defaults = "hibernate,stormpot") Fixture fixture,
       @Param(value = "threads", defaults = "4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
-      @Param(value = "iterations", defaults = "200") int iterations,
+      @Param(value = "iterations", defaults = "1000") int iterations,
       @Param(value = "database", defaults = "hsqldb") Database database) {
     this.fixture = fixture;
     this.threads = threads;
@@ -93,6 +95,8 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
   }
   
   public static void main(String[] args) throws Exception {
-    BenchmarkRunner.run(EventSourcingBenchmark.class);
+    Reporter reporter = new PrintingReporter();
+    // reduce the iteration counts, because this one is a bit slow
+    BenchmarkRunner.run(EventSourcingBenchmark.class, reporter, 3, 8);
   }
 }
