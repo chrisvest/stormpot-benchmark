@@ -38,6 +38,7 @@ public enum Database {
             "id int auto_increment primary key, " +
             "txt varchar(255), x int) " +
             "engine = MyISAM");
+        
         update(con, "drop table if exists event");
         update(con, "create table event (" +
         		"id int auto_increment primary key, " +
@@ -69,12 +70,18 @@ public enum Database {
     public void createDatabase(DataSource dataSource) throws Exception {
       Connection con = dataSource.getConnection();
       try {
-        try {
-          update(con, "drop table log");
-        } catch (Exception _) {} // ignored in the absence of 'if exists'
+        tryUpdate(con, "drop table log");
         update(con, "create table log (" +
             "id int generated always as identity," +
             "txt varchar(255), x int, primary key (id))");
+        
+        tryUpdate(con, "drop table event");
+        update(con, "create table event (" +
+            "id int generated always as identity, " +
+            "entity_id int not null, " +
+            "type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
+            "payload varchar(4000) not null)");
+        update(con, "create index entity_lookup on event (entity_id asc, id desc)");
       } finally {
         con.close();
       }
@@ -107,12 +114,18 @@ public enum Database {
     public void createDatabase(DataSource dataSource) throws Exception {
       Connection con = dataSource.getConnection();
       try {
-        try {
-          update(con, "drop table log");
-        } catch (Exception _) {} // ignored in the absence of 'if exists'
+        tryUpdate(con, "drop table log");
         update(con, "create table log (" +
             "id int generated always as identity," +
             "txt varchar(255), x int, primary key (id))");
+        
+        tryUpdate(con, "drop table event");
+        update(con, "create table event (" +
+            "id int generated always as identity, " +
+            "entity_id int not null, " +
+            "type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
+            "payload varchar(4000) not null)");
+        update(con, "create index entity_lookup on event (entity_id, id desc)");
       } finally {
         con.close();
       }
@@ -171,6 +184,15 @@ public enum Database {
       statement.executeUpdate(sql);
     } finally {
       statement.close();
+    }
+  }
+  
+  protected boolean tryUpdate(Connection con, String sql) {
+    try {
+      update(con, sql);
+      return true;
+    } catch (Exception e) {
+      return false;
     }
   }
 }

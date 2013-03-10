@@ -12,11 +12,11 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
   private final Random randomSource;
   
   public EventSourcingBenchmark(
-      @Param(value = "fixture", defaults = "hibernate") Fixture fixture,
+      @Param(value = "fixture", defaults = "hibernate,stormpot") Fixture fixture,
       @Param(value = "threads", defaults = "4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
       @Param(value = "iterations", defaults = "200") int iterations,
-      @Param(value = "database", defaults = "mysql") Database database) {
+      @Param(value = "database", defaults = "hsqldb") Database database) {
     this.fixture = fixture;
     this.threads = threads;
     this.poolSize = poolSize;
