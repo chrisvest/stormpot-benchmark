@@ -36,7 +36,8 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
       .setProperty("hibernate.c3p0.max_size", "" + poolSize)
       .setProperty("hibernate.c3p0.timeout", "1800")
       .setProperty("hibernate.c3p0.max_statements", "50")
-      .setProperty("hibernate.jdbc.batch_size", "30");
+      .setProperty("hibernate.jdbc.batch_size", "30")
+      .setProperty("hibernate.show_sql", "false");
     sessionFactory = configuration.buildSessionFactory();
   }
 

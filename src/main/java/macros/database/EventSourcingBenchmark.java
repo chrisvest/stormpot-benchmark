@@ -14,8 +14,8 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
   private final Random randomSource;
   
   public EventSourcingBenchmark(
-      @Param(value = "fixture", defaults = "hibernate,stormpot") Fixture fixture,
-      @Param(value = "threads", defaults = "4") int threads,
+      @Param(value = "fixture", defaults = "hibernate") Fixture fixture,
+      @Param(value = "threads", defaults = "1") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
       @Param(value = "iterations", defaults = "1000") int iterations,
       @Param(value = "database", defaults = "hsqldb") Database database) {
@@ -34,7 +34,9 @@ public class EventSourcingBenchmark extends DatabaseBenchmark {
     long begin = recorder.begin();
     Thread currentThread = Thread.currentThread();
     String threadName = currentThread.getName();
+    System.in.read(); // XXX
     for (int i = 0; i < iterations; i++) {
+//      System.out.println("#### ITERATION"); // XXX
       int entityId = (prng.nextInt() & 64) + ((int) currentThread.getId() * 64);
       String name = threadName + "-" + i;
       int age = Math.abs(prng.nextInt()) % 100;
