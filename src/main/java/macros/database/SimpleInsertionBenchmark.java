@@ -71,14 +71,14 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
   }
 
   public static void main(String[] args) throws Exception {
-    HtmlChartsReporter reporter = new HtmlChartsReporter(new Interpretor());
+    HtmlChartsReporter chartReporter = new HtmlChartsReporter(new Interpretor());
     int iterations = BenchmarkRunner.DEFAULT_ITERATIONS;
     int warmupIterations = BenchmarkRunner.DEFAULT_WARMUP_ITERATIONS;
     
     BenchmarkRunner.run(
-        SimpleInsertionBenchmark.class, reporter, iterations, warmupIterations);
+        SimpleInsertionBenchmark.class, chartReporter, iterations, warmupIterations);
     
-    String report = reporter.generateReport();
+    String report = chartReporter.generateReport();
     File file = new File("index.html");
     if (!file.exists()) file.createNewFile();
     Files.write(file.toPath(), report.getBytes("UTF-8"));
