@@ -1,20 +1,24 @@
 package macros.database;
 
+import java.io.File;
+import java.nio.file.Files;
 
-
-import macros.htmlchartsreporter.DataInterpretor;
-import macros.htmlchartsreporter.HtmlChartsReporter;
 
 import org.benchkit.BenchmarkRunner;
 import org.benchkit.Param;
 import org.benchkit.Recorder;
-import org.benchkit.Reporter;
+import org.benchkit.htmlchartsreporter.DataInterpretor;
+import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
 
 public class SimpleInsertionBenchmark extends DatabaseBenchmark {
   
   private static final class Interpretor implements DataInterpretor {
     public String getYaxisName(Object[] args) {
       return "Ops/Sec";
+    }
+    
+    public String getBenchmarkName(Object[] args) {
+      return "SimpleInsertionBenchmark";
     }
 
     @SuppressWarnings("unchecked")
@@ -45,9 +49,9 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
 
   public SimpleInsertionBenchmark(
       @Param(value = "fixture", defaults = "hibernate,stormpot") Fixture fixture,
-      @Param(value = "threads", defaults = "1,2,4") int threads,
+      @Param(value = "threads", defaults = "1,2,3,4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
-      @Param(value = "iterations", defaults = "1000") int iterations,
+      @Param(value = "iterations", defaults = "10000") int iterations,
       @Param(value = "database", defaults = "hsqldb") Database database) {
     this.fixture = fixture;
     this.threads = threads;
@@ -67,10 +71,16 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
   }
 
   public static void main(String[] args) throws Exception {
-    Reporter reporter = new HtmlChartsReporter(new Interpretor());
+    HtmlChartsReporter reporter = new HtmlChartsReporter(new Interpretor());
     int iterations = BenchmarkRunner.DEFAULT_ITERATIONS;
     int warmupIterations = BenchmarkRunner.DEFAULT_WARMUP_ITERATIONS;
+    
     BenchmarkRunner.run(
         SimpleInsertionBenchmark.class, reporter, iterations, warmupIterations);
+    
+    String report = reporter.generateReport();
+    File file = new File("index.html");
+    if (!file.exists()) file.createNewFile();
+    Files.write(file.toPath(), report.getBytes("UTF-8"));
   }
 }
