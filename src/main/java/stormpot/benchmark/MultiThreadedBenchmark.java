@@ -1,5 +1,7 @@
 package stormpot.benchmark;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -8,8 +10,12 @@ import java.util.concurrent.Executors;
 
 import org.benchkit.Benchmark;
 import org.benchkit.BenchmarkRunner;
+import org.benchkit.PrintingReporter;
 import org.benchkit.Recorder;
 import org.benchkit.Param;
+import org.benchkit.WarmupPrintingReporter;
+import org.benchkit.htmlchartsreporter.DataInterpretor;
+import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
 
 public class MultiThreadedBenchmark implements Benchmark {
   private static final int ITERATIONS = 2 * 1000 * 1000;
@@ -20,8 +26,8 @@ public class MultiThreadedBenchmark implements Benchmark {
   private PoolFacade pool;
   
   public MultiThreadedBenchmark(
-      @Param(value = "pools", defaults = "blaze,queue") PoolFactory factory,
-      @Param(value = "threads", defaults = "2,4") int threads) {
+      @Param(value = "pools", defaults = "stack,generic,queue,blaze,furious") PoolFactory factory,
+      @Param(value = "threads", defaults = "1,2,3,4") int threads) {
     this.factory = factory;
     this.threads = threads;
   }
@@ -89,6 +95,63 @@ public class MultiThreadedBenchmark implements Benchmark {
   }
   
   public static void main(String[] args) throws Exception {
-    BenchmarkRunner.run(MultiThreadedBenchmark.class);
+    HtmlChartsReporter chartReporter = new HtmlChartsReporter(new Interpretor());
+    PrintingReporter printingReporter = new PrintingReporter();
+    WarmupPrintingReporter warmupReporter = new WarmupPrintingReporter();
+    Class<? extends Benchmark> benchmarkType = MultiThreadedBenchmark.class;
+    String htmlReportFilename = "multi-threaded-results.html";
+    
+    // Pre-heat the lot:
+    System.out.println("## Warmup");
+    BenchmarkRunner.run(
+        benchmarkType,
+        warmupReporter, 4, 0);
+    BenchmarkRunner.run(
+        benchmarkType,
+        warmupReporter, 1, 0);
+    
+    // The real run:
+    System.out.println("## Benchmark");
+    BenchmarkRunner.run(
+        benchmarkType,
+        printingReporter,
+        chartReporter,
+        5, 0);
+    
+    String report = chartReporter.generateReport();
+    File file = new File(htmlReportFilename);
+    if (!file.exists()) file.createNewFile();
+    Files.write(file.toPath(), report.getBytes("UTF-8"));
+  }
+  
+  private static final class Interpretor implements DataInterpretor {
+    public String getYaxisName(Object[] args) {
+      return "Ops/Sec";
+    }
+    
+    public String getBenchmarkName(Object[] args) {
+      return "Multi-Threaded Benchmark";
+    }
+
+    @SuppressWarnings("unchecked")
+    public Comparable<Object> getXvalue(Object[] args) {
+      Object value = String.valueOf(args[1]);
+      return (Comparable<Object>) value;
+    }
+
+    @Override
+    public String getXaxisName(Object[] args) {
+      return "Threads";
+    }
+
+    @Override
+    public String getSeriesName(Object[] args) {
+      return String.valueOf(args[0]);
+    }
+
+    @Override
+    public String getChartName(Object[] args) {
+      return "Multi-Threaded Benchmark";
+    }
   }
 }

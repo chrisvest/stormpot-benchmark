@@ -4,3 +4,5 @@
 .DS_Store
 target
 index.html
+message-passing-results.html
+multi-threaded-results.html
