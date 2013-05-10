@@ -9,14 +9,11 @@ import org.benchkit.Param;
 import org.benchkit.Recorder;
 import org.benchkit.htmlchartsreporter.DataInterpretor;
 import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
+import org.benchkit.htmlchartsreporter.ThroughputChart;
 
 public class SimpleInsertionBenchmark extends DatabaseBenchmark {
   
   private static final class Interpretor implements DataInterpretor {
-    public String getYaxisName(Object[] args) {
-      return "Ops/Sec";
-    }
-    
     public String getBenchmarkName(Object[] args) {
       return "SimpleInsertionBenchmark";
     }
@@ -27,23 +24,8 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
     }
 
     @Override
-    public String getXaxisName(Object[] args) {
-      return "Threads";
-    }
-
-    @Override
     public String getSeriesName(Object[] args) {
       return String.valueOf(args[0]);
-    }
-
-    @Override
-    public String getChartName(Object[] args) {
-      String poolSize = String.valueOf(args[2]);
-      String iterations = String.valueOf(args[3]);
-      String database = String.valueOf(args[4]);
-      String msg = "Simple Concurrent Insertion " +
-      		"[poolSize=%s, iterations=%s, database=%s]";
-      return String.format(msg, poolSize, iterations, database);
     }
   }
 
@@ -71,7 +53,9 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
   }
 
   public static void main(String[] args) throws Exception {
-    HtmlChartsReporter chartReporter = new HtmlChartsReporter(new Interpretor());
+    HtmlChartsReporter chartReporter = new HtmlChartsReporter(
+        new Interpretor(), "Simple Concurrent Insertion [poolSize=%3$s, iterations=%4$s, database=%5$s]");
+    chartReporter.addChartRender(new ThroughputChart("Throughput", "Threads", "Ops/Sec"));
     int iterations = BenchmarkRunner.DEFAULT_ITERATIONS;
     int warmupIterations = BenchmarkRunner.DEFAULT_WARMUP_ITERATIONS;
     
@@ -79,7 +63,7 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
         SimpleInsertionBenchmark.class, chartReporter, iterations, warmupIterations);
     
     String report = chartReporter.generateReport();
-    File file = new File("index.html");
+    File file = new File("simple-concurrent-insertion.html");
     if (!file.exists()) file.createNewFile();
     Files.write(file.toPath(), report.getBytes("UTF-8"));
   }

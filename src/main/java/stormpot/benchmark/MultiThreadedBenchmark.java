@@ -16,6 +16,8 @@ import org.benchkit.Param;
 import org.benchkit.WarmupPrintingReporter;
 import org.benchkit.htmlchartsreporter.DataInterpretor;
 import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
+import org.benchkit.htmlchartsreporter.LatencyHistogramChart;
+import org.benchkit.htmlchartsreporter.ThroughputChart;
 
 public class MultiThreadedBenchmark implements Benchmark {
   private static final int ITERATIONS = 2 * 1000 * 1000;
@@ -95,7 +97,8 @@ public class MultiThreadedBenchmark implements Benchmark {
   }
   
   public static void main(String[] args) throws Exception {
-    HtmlChartsReporter chartReporter = new HtmlChartsReporter(new Interpretor());
+    HtmlChartsReporter chartReporter = new HtmlChartsReporter(
+        new Interpretor(), "Multi-Threaded Benchmark");
     PrintingReporter printingReporter = new PrintingReporter();
     WarmupPrintingReporter warmupReporter = new WarmupPrintingReporter();
     Class<? extends Benchmark> benchmarkType = MultiThreadedBenchmark.class;
@@ -118,6 +121,8 @@ public class MultiThreadedBenchmark implements Benchmark {
         chartReporter,
         5, 0);
     
+    chartReporter.addChartRender(new ThroughputChart("Multi-Threaded Benchmark", "Threads", "Ops/Sec"));
+    chartReporter.addChartRender(new LatencyHistogramChart("Latency Histograms", "Threads"));
     String report = chartReporter.generateReport();
     File file = new File(htmlReportFilename);
     if (!file.exists()) file.createNewFile();
@@ -125,10 +130,6 @@ public class MultiThreadedBenchmark implements Benchmark {
   }
   
   private static final class Interpretor implements DataInterpretor {
-    public String getYaxisName(Object[] args) {
-      return "Ops/Sec";
-    }
-    
     public String getBenchmarkName(Object[] args) {
       return "Multi-Threaded Benchmark";
     }
@@ -140,18 +141,8 @@ public class MultiThreadedBenchmark implements Benchmark {
     }
 
     @Override
-    public String getXaxisName(Object[] args) {
-      return "Threads";
-    }
-
-    @Override
     public String getSeriesName(Object[] args) {
       return String.valueOf(args[0]);
-    }
-
-    @Override
-    public String getChartName(Object[] args) {
-      return "Multi-Threaded Benchmark";
     }
   }
 }

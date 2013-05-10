@@ -8,6 +8,7 @@ import org.benchkit.Recorder;
 import org.benchkit.WarmupPrintingReporter;
 import org.benchkit.htmlchartsreporter.DataInterpretor;
 import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
+import org.benchkit.htmlchartsreporter.ThroughputChart;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -90,7 +91,10 @@ public class MessagePassingBenchmark implements Benchmark {
   }
   
   public static void main(String[] args) throws Exception {
-    HtmlChartsReporter chartReporter = new HtmlChartsReporter(new Interpretor());
+    HtmlChartsReporter chartReporter = new HtmlChartsReporter(
+        new Interpretor(),
+        "Message Passing Benchmark [poolSize=%2$s, iterations=%3$s]");
+    chartReporter.addChartRender(new ThroughputChart("Throughput", "Threads", "Ops/Sec"));
     PrintingReporter printingReporter = new PrintingReporter();
     WarmupPrintingReporter warmupReporter = new WarmupPrintingReporter();
     
@@ -118,10 +122,6 @@ public class MessagePassingBenchmark implements Benchmark {
   }
   
   private static final class Interpretor implements DataInterpretor {
-    public String getYaxisName(Object[] args) {
-      return "Ops/Sec";
-    }
-    
     public String getBenchmarkName(Object[] args) {
       return "Message Passing Benchmark";
     }
@@ -133,22 +133,8 @@ public class MessagePassingBenchmark implements Benchmark {
     }
 
     @Override
-    public String getXaxisName(Object[] args) {
-      return "Threads";
-    }
-
-    @Override
     public String getSeriesName(Object[] args) {
       return String.valueOf(args[0]);
-    }
-
-    @Override
-    public String getChartName(Object[] args) {
-      String poolSize = String.valueOf(args[1]);
-      String iterations = String.valueOf(args[2]);
-      String msg = "Message Passing Benchmark " +
-          "[poolSize=%s, iterations=%s]";
-      return String.format(msg, poolSize, iterations);
     }
   }
 }
