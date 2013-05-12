@@ -28,10 +28,10 @@ public class MultiThreadedBenchmark implements Benchmark {
   private PoolFacade pool;
   
   public MultiThreadedBenchmark(
-      @Param(value = "pools", defaults = "blaze,furious") PoolFactory factory,
-      @Param(value = "threads", defaults = "1,2,4,12") int threads) {
-//      @Param(value = "pools", defaults = "stack,generic,queue,blaze,furious") PoolFactory factory,
-//      @Param(value = "threads", defaults = "1,2,3,4,6,8,12,16") int threads) {
+//      @Param(value = "pools", defaults = "blaze,furious") PoolFactory factory,
+//      @Param(value = "threads", defaults = "1,2,4,12") int threads) {
+      @Param(value = "pools", defaults = "stack,generic,queue,blaze,furious") PoolFactory factory,
+      @Param(value = "threads", defaults = "1,2,4,8,16") int threads) {
     this.factory = factory;
     this.threads = threads;
   }

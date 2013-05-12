@@ -8,6 +8,7 @@ import org.benchkit.Recorder;
 import org.benchkit.WarmupPrintingReporter;
 import org.benchkit.htmlchartsreporter.DataInterpretor;
 import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
+import org.benchkit.htmlchartsreporter.LatencyHistogramChart;
 import org.benchkit.htmlchartsreporter.ThroughputChart;
 
 import java.io.File;
@@ -27,7 +28,7 @@ public class MessagePassingBenchmark implements Benchmark {
   
   public MessagePassingBenchmark(
       @Param(value = "pools", defaults = "stack,generic,queue,blaze,furious") PoolFactory factory,
-      @Param(value = "poolSize", defaults = "1024") int poolSize,
+      @Param(value = "poolSize", defaults = "8,1024") int poolSize,
       @Param(value = "repititions", defaults = "2000000") int repititions) {
     this.factory = factory;
     this.poolSize = poolSize;
@@ -93,8 +94,9 @@ public class MessagePassingBenchmark implements Benchmark {
   public static void main(String[] args) throws Exception {
     HtmlChartsReporter chartReporter = new HtmlChartsReporter(
         new Interpretor(),
-        "Message Passing Benchmark [poolSize=%2$s, iterations=%3$s]");
-    chartReporter.addChartRender(new ThroughputChart("Throughput", "Threads", "Ops/Sec"));
+        "Message Passing Benchmark [iterations=%3$s]");
+    chartReporter.addChartRender(new ThroughputChart("Throughput", "Pool size", "Ops/Sec"));
+    chartReporter.addChartRender(new LatencyHistogramChart("Latency Histogram", "Pool size"));
     PrintingReporter printingReporter = new PrintingReporter();
     WarmupPrintingReporter warmupReporter = new WarmupPrintingReporter();
     
@@ -128,8 +130,7 @@ public class MessagePassingBenchmark implements Benchmark {
 
     @SuppressWarnings("unchecked")
     public Comparable<Object> getXvalue(Object[] args) {
-      Object value = String.valueOf(args[0]);
-      return (Comparable<Object>) value;
+      return (Comparable<Object>) args[1];
     }
 
     @Override
