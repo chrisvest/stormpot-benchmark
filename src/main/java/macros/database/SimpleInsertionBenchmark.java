@@ -9,6 +9,7 @@ import org.benchkit.Param;
 import org.benchkit.Recorder;
 import org.benchkit.htmlchartsreporter.DataInterpretor;
 import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
+import org.benchkit.htmlchartsreporter.LatencyHistogramChart;
 import org.benchkit.htmlchartsreporter.ThroughputChart;
 
 public class SimpleInsertionBenchmark extends DatabaseBenchmark {
@@ -34,7 +35,7 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
       @Param(value = "threads", defaults = "1,2,3,4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
       @Param(value = "iterations", defaults = "10000") int iterations,
-      @Param(value = "database", defaults = "hsqldb") Database database) {
+      @Param(value = "database", defaults = "h2") Database database) {
     this.fixture = fixture;
     this.threads = threads;
     this.poolSize = poolSize;
@@ -56,6 +57,7 @@ public class SimpleInsertionBenchmark extends DatabaseBenchmark {
     HtmlChartsReporter chartReporter = new HtmlChartsReporter(
         new Interpretor(), "Simple Concurrent Insertion [poolSize=%3$s, iterations=%4$s, database=%5$s]");
     chartReporter.addChartRender(new ThroughputChart("Throughput", "Threads", "Ops/Sec"));
+    chartReporter.addChartRender(new LatencyHistogramChart("Latency", "Threads"));
     int iterations = BenchmarkRunner.DEFAULT_ITERATIONS;
     int warmupIterations = BenchmarkRunner.DEFAULT_WARMUP_ITERATIONS;
     

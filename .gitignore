@@ -6,3 +6,6 @@ target
 index.html
 message-passing-results.html
 multi-threaded-results.html
+derby.log
+derbyDB
+simple-concurrent-insertion.html

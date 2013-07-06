@@ -8,6 +8,7 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 
 import org.apache.derby.jdbc.EmbeddedDataSource40;
+import org.h2.jdbcx.JdbcDataSource;
 import org.hsqldb.jdbc.JDBCDataSource;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
@@ -52,6 +53,7 @@ public enum Database {
       }
     }
   },
+  @Deprecated // DOES NOT WORK!
   derby(
       "jdbc:derby:derbyDB;create=true",
       "org.hibernate.dialect.DerbyTenSevenDialect",
@@ -130,6 +132,42 @@ public enum Database {
         con.close();
       }
     }
+  },
+  h2(
+      "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
+      "org.hibernate.dialect.H2Dialect",
+      "org.h2.Driver",
+      "sa",
+      "") {
+    @Override
+    public DataSource createDataSource() {
+      org.h2.jdbcx.JdbcDataSource ds = new JdbcDataSource();
+      ds.setURL(getConnectionString());
+      ds.setUser(getUser());
+      ds.setPassword(getPass());
+      return ds;
+    }
+
+    @Override
+    public void createDatabase(DataSource dataSource) throws Exception {
+      Connection con = dataSource.getConnection();
+      try {
+        tryUpdate(con, "drop table log");
+        update(con, "create table log (" +
+            "id int generated always as identity," +
+            "txt varchar(255), x int, primary key (id))");
+        
+        tryUpdate(con, "drop table event");
+        update(con, "create table event (" +
+            "id int generated always as identity, " +
+            "entity_id int not null, " +
+            "type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
+            "payload varchar(4000) not null)");
+        update(con, "create index entity_lookup on event (entity_id, id desc)");
+      } finally {
+        con.close();
+      }
+    }
   };
 
   private final String connectionString;
@@ -182,6 +220,14 @@ public enum Database {
     Statement statement = con.createStatement();
     try {
       statement.executeUpdate(sql);
+      con.commit();
+    } catch (Exception e) {
+      try {
+        con.rollback();
+      } catch (Exception e1) {
+        e1.printStackTrace();
+      }
+      throw e;
     } finally {
       statement.close();
     }

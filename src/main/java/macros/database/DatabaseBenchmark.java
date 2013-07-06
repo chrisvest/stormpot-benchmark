@@ -1,7 +1,6 @@
 package macros.database;
 
 import java.sql.Connection;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -56,10 +55,8 @@ public abstract class DatabaseBenchmark implements Benchmark {
   private void clearDatabase() throws Exception {
     Connection connection = dataSource.getConnection();
     try {
-      Statement truncate = connection.createStatement();
-      truncate.executeUpdate("truncate table log");
-      truncate.executeUpdate("truncate table event");
-      truncate.close();
+      database.tryUpdate(connection, "truncate table log");
+      database.tryUpdate(connection, "truncate table event");
     } finally {
       connection.close();
     }
