@@ -216,7 +216,7 @@ public enum Database {
   public void shutdownAll() {
   }
 
-  protected void update(Connection con, String sql) throws Exception {
+  public void update(Connection con, String sql) throws Exception {
     Statement statement = con.createStatement();
     try {
       statement.executeUpdate(sql);
@@ -233,7 +233,7 @@ public enum Database {
     }
   }
   
-  protected boolean tryUpdate(Connection con, String sql) {
+  public boolean tryUpdate(Connection con, String sql) {
     try {
       update(con, sql);
       return true;

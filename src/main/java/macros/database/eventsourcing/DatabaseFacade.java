@@ -1,4 +1,4 @@
-package macros.database;
+package macros.database.eventsourcing;
 
 import java.util.List;
 import java.util.Properties;
@@ -6,8 +6,6 @@ import java.util.Properties;
 public interface DatabaseFacade {
 
   void close() throws Exception;
-
-  void insertLogRow(String txt, int x) throws Exception;
 
   void updateEntity(Object tx, int entityId, Properties nameChange) throws Exception;
 

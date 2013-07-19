@@ -1,4 +1,4 @@
-package macros.database;
+package macros.database.eventsourcing;
 
 /**
  * Based on George Marsaglias XorShift:

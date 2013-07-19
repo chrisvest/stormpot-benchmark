@@ -1,7 +1,6 @@
-package macros.database;
+package macros.database.eventsourcing;
 
-import macros.database.hibernate.HibernateDatabaseFacade;
-import macros.database.stormpot.StormpotDatabaseFacade;
+import macros.database.Database;
 
 enum Fixture {
   stormpot {

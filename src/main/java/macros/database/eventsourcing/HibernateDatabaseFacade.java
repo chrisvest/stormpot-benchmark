@@ -1,4 +1,4 @@
-package macros.database.hibernate;
+package macros.database.eventsourcing;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -8,8 +8,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+
 import macros.database.Database;
-import macros.database.DatabaseFacade;
 
 import org.hibernate.Query;
 import org.hibernate.ScrollMode;
@@ -19,13 +26,69 @@ import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
 public class HibernateDatabaseFacade implements DatabaseFacade {
+  @Entity
+  @Table(name = "event")
+  @NamedQueries({
+    @NamedQuery(
+        name = "getRecent",
+        query = "select e from EventEntity e where e.entityId = :entityId " +
+                "order by e.id desc")
+  })
+  public static class EventEntity {
+    public static final int TYPE_SNAPSHOT = 1;
+    public static final int TYPE_UPDATE = 2;
+    public static final int TYPE_DELETE = 3;
+    
+    private Long id;
+    
+    private int entityId;
+    
+    private int type;
+    
+    private String payload;
+
+    @Id @GeneratedValue
+    public Long getId() {
+      return id;
+    }
+
+    public void setId(Long id) {
+      this.id = id;
+    }
+
+    @Column(name = "entity_id", nullable = false)
+    public int getEntityId() {
+      return entityId;
+    }
+
+    public void setEntityId(int entityId) {
+      this.entityId = entityId;
+    }
+    
+    @Column(name = "type", nullable = false)
+    public int getType() {
+      return type;
+    }
+
+    public void setType(int type) {
+      this.type = type;
+    }
+
+    @Column(name = "payload", nullable = false, length = 4000)
+    public String getPayload() {
+      return payload;
+    }
+
+    public void setPayload(String payload) {
+      this.payload = payload;
+    }
+  }
   
   private final SessionFactory sessionFactory;
 
   @SuppressWarnings("deprecation")
   public HibernateDatabaseFacade(Database database, int poolSize) {
     Configuration configuration = new Configuration()
-      .addAnnotatedClass(LogEntity.class)
       .addAnnotatedClass(EventEntity.class)
       .setProperty("hibernate.dialect", database.getDialect())
       .setProperty("hibernate.connection.driver_class", database.getDriver())
@@ -44,19 +107,6 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
   @Override
   public void close() {
     sessionFactory.close();
-  }
-
-  @Override
-  public void insertLogRow(String txt, int x) {
-    LogEntity event = new LogEntity();
-    event.setTxt(txt);
-    event.setX(x);
-    Session session = sessionFactory.openSession();
-    try {
-      session.save(event);
-    } finally {
-      session.close();
-    }
   }
 
   private static final int SNAPSHOT_INTERVAL = 10;
