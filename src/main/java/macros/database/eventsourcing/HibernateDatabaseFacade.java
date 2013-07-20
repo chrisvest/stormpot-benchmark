@@ -23,6 +23,7 @@ import org.hibernate.ScrollMode;
 import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 
 public class HibernateDatabaseFacade implements DatabaseFacade {
@@ -31,7 +32,7 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
   @NamedQueries({
     @NamedQuery(
         name = "getRecent",
-        query = "select e from EventEntity e where e.entityId = :entityId " +
+        query = "select e from HibernateDatabaseFacade$EventEntity e where e.entityId = :entityId " +
                 "order by e.id desc")
   })
   public static class EventEntity {
@@ -84,6 +85,11 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
     }
   }
   
+  public static class SessionAndTransaction {
+    public Session session;
+    public Transaction transaction;
+  }
+  
   private final SessionFactory sessionFactory;
 
   @SuppressWarnings("deprecation")
@@ -113,28 +119,29 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
 
   @Override
   public Object begin() throws Exception {
-    Session session = sessionFactory.openSession();
-    session.beginTransaction();
-    return session;
+    SessionAndTransaction stx = new SessionAndTransaction();
+    stx.session = sessionFactory.openSession();
+    stx.transaction = stx.session.beginTransaction();
+    return stx;
   }
 
   @Override
   public void commit(Object tx) throws Exception {
-    Session session = (Session) tx;
-    session.getTransaction().commit();
-    session.close();
+    SessionAndTransaction stx = (SessionAndTransaction) tx;
+    stx.transaction.commit();
+    stx.session.close();
   }
 
   @Override
   public void rollback(Object tx) throws Exception {
-    Session session = (Session) tx;
-    session.getTransaction().rollback();
-    session.close();
+    SessionAndTransaction stx = (SessionAndTransaction) tx;
+    stx.transaction.rollback();
+    stx.session.close();
   }
 
   @Override
   public void updateEntity(Object tx, int entityId, Properties change) throws Exception {
-    Session session = (Session) tx;
+    Session session = ((SessionAndTransaction) tx).session;
     List<EventEntity> updates =
         getRecentEvents(session, entityId, SNAPSHOT_INTERVAL);
     EventEntity event = buildEntity(entityId, change, EventEntity.TYPE_UPDATE);
@@ -189,7 +196,7 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
   @Override
   public List<Properties> getRecentUpdates(
       Object tx, int entityId, int count) throws Exception {
-    Session session = (Session) tx;
+    Session session = ((SessionAndTransaction) tx).session;
     List<EventEntity> events = getRecentEvents(session, entityId, count);
     List<Properties> list = new ArrayList<Properties>(count);
     for (EventEntity event : events) {
@@ -217,7 +224,7 @@ public class HibernateDatabaseFacade implements DatabaseFacade {
 
   @Override
   public Properties getEntity(Object tx, int entityId) throws Exception {
-    Session session = (Session) tx;
+    Session session = ((SessionAndTransaction) tx).session;
     List<EventEntity> events = getRecentEvents(session, entityId, SNAPSHOT_INTERVAL);
     return buildSnapshot(events);
   }

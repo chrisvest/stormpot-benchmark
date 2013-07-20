@@ -9,3 +9,4 @@ multi-threaded-results.html
 derby.log
 derbyDB
 simple-concurrent-insertion.html
+event-sourcing.html

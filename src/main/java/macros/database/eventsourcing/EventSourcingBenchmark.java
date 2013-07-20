@@ -1,5 +1,7 @@
 package macros.database.eventsourcing;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +21,30 @@ import macros.database.Database;
 import org.benchkit.Benchmark;
 import org.benchkit.BenchmarkRunner;
 import org.benchkit.Param;
-import org.benchkit.PrintingReporter;
 import org.benchkit.Recorder;
-import org.benchkit.Reporter;
+import org.benchkit.htmlchartsreporter.DataInterpretor;
+import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
+import org.benchkit.htmlchartsreporter.LatencyHistogramChart;
+import org.benchkit.htmlchartsreporter.ThroughputChart;
 
 public class EventSourcingBenchmark implements Benchmark {
+  
+  private static final class Interpretor implements DataInterpretor {
+    public String getBenchmarkName(Object[] args) {
+      return "EventSourcing";
+    }
+
+    @SuppressWarnings("unchecked")
+    public Comparable<Object> getXvalue(Object[] args) {
+      return (Comparable<Object>) args[1];
+    }
+
+    @Override
+    public String getSeriesName(Object[] args) {
+      return String.valueOf(args[0]);
+    }
+  }
+  
   private final Random randomSource;
   private Fixture fixture;
   private int threads;
@@ -36,7 +57,7 @@ public class EventSourcingBenchmark implements Benchmark {
   
   public EventSourcingBenchmark(
       @Param(value = "fixture", defaults = "hibernate,stormpot") Fixture fixture,
-      @Param(value = "threads", defaults = "1") int threads,
+      @Param(value = "threads", defaults = "1,2,3,4") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
       @Param(value = "iterations", defaults = "1000") int iterations,
       @Param(value = "database", defaults = "h2") Database database) {
@@ -51,9 +72,9 @@ public class EventSourcingBenchmark implements Benchmark {
   private void runBenchmark(Recorder recorder) throws Exception {
     XorShiftRandom prng = new XorShiftRandom(randomSource.nextInt());
     
-    long begin = recorder.begin();
     Thread currentThread = Thread.currentThread();
     String threadName = currentThread.getName();
+    long begin = recorder.begin();
     for (int i = 0; i < iterations; i++) {
       int entityId = (prng.nextInt() & 64) + ((int) currentThread.getId() * 64);
       String name = threadName + "-" + i;
@@ -68,7 +89,8 @@ public class EventSourcingBenchmark implements Benchmark {
         if (runTransaction(entityId, nameChange, ageChange)) {
           break;
         }
-        System.err.println("transaction " + x + " failed.");
+        System.err.println(
+            "Transaction " + x + " failed for entity " + entityId);
       }
       
       begin = recorder.record(begin);
@@ -172,8 +194,19 @@ public class EventSourcingBenchmark implements Benchmark {
   }
 
   public static void main(String[] args) throws Exception {
-    Reporter reporter = new PrintingReporter();
-    // reduce the iteration counts, because this one is a bit slow
-    BenchmarkRunner.run(EventSourcingBenchmark.class, reporter, 3, 8);
+    HtmlChartsReporter chartReporter = new HtmlChartsReporter(
+        new Interpretor(), "Event Sourcing [poolSize=%3$s, iterations=%4$s, database=%5$s]");
+    chartReporter.addChartRender(new ThroughputChart("Throughput", "Threads", "Ops/Sec"));
+    chartReporter.addChartRender(new LatencyHistogramChart("Latency", "Threads"));
+    int iterations = BenchmarkRunner.DEFAULT_ITERATIONS;
+    int warmupIterations = BenchmarkRunner.DEFAULT_WARMUP_ITERATIONS;
+    
+    BenchmarkRunner.run(
+        EventSourcingBenchmark.class, chartReporter, iterations, warmupIterations);
+    
+    String report = chartReporter.generateReport();
+    File file = new File("event-sourcing.html");
+    if (!file.exists()) file.createNewFile();
+    Files.write(file.toPath(), report.getBytes("UTF-8"));
   }
 }
