@@ -25,7 +25,6 @@ public class StormpotInserter implements Inserter {
     public Dao(Slot slot, Connection connection) throws Exception {
       this.slot = slot;
       this.connection = connection;
-      connection.setAutoCommit(true);
       insertLog = connection.prepareStatement(
           "insert into log (txt, x) values (?, ?)");
     }
