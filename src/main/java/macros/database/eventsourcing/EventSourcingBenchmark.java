@@ -17,7 +17,11 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import macros.database.Database;
+import macros.database.XorShiftRandom;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.benchkit.Benchmark;
 import org.benchkit.BenchmarkRunner;
 import org.benchkit.Param;
@@ -57,9 +61,9 @@ public class EventSourcingBenchmark implements Benchmark {
   
   public EventSourcingBenchmark(
       @Param(value = "fixture", defaults = "hibernate,stormpot") Fixture fixture,
-      @Param(value = "threads", defaults = "1,2,3,4") int threads,
+      @Param(value = "threads", defaults = "1,2,3,4,5,6,7,8") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
-      @Param(value = "iterations", defaults = "1000") int iterations,
+      @Param(value = "iterations", defaults = "10000") int iterations,
       @Param(value = "database", defaults = "h2") Database database) {
     this.fixture = fixture;
     this.threads = threads;
@@ -194,6 +198,9 @@ public class EventSourcingBenchmark implements Benchmark {
   }
 
   public static void main(String[] args) throws Exception {
+    BasicConfigurator.configure();
+    Logger.getRootLogger().setLevel(Level.OFF);
+    
     HtmlChartsReporter chartReporter = new HtmlChartsReporter(
         new Interpretor(), "Event Sourcing [poolSize=%3$s, iterations=%4$s, database=%5$s]");
     chartReporter.addChartRender(new ThroughputChart("Throughput", "Threads", "Ops/Sec"));

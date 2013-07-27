@@ -1,13 +1,10 @@
 package macros.database;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.sql.DataSource;
 
-import org.apache.derby.jdbc.EmbeddedDataSource40;
 import org.h2.jdbcx.JdbcDataSource;
 import org.hsqldb.jdbc.JDBCDataSource;
 
@@ -34,6 +31,7 @@ public enum Database {
     public void createDatabase(DataSource dataSource) throws Exception {
       Connection con = dataSource.getConnection();
       try {
+        con.setAutoCommit(false);
         update(con, "drop table if exists log");
         update(con, "create table log (" +
             "id int auto_increment primary key, " +
@@ -48,52 +46,28 @@ public enum Database {
         		"payload varchar(4000) not null," +
         		"index entity_lookup using btree (entity_id asc, id desc)) " +
         		"engine = InnoDB");
-      } finally {
-        con.close();
-      }
-    }
-  },
-  @Deprecated // DOES NOT WORK!
-  derby(
-      "jdbc:derby:derbyDB;create=true",
-      "org.hibernate.dialect.DerbyTenSevenDialect",
-      "org.apache.derby.jdbc.EmbeddedDriver",
-      "",
-      "") {
-    @Override
-    public DataSource createDataSource() {
-      EmbeddedDataSource40 ds = new EmbeddedDataSource40();
-      ds.setDatabaseName("derbyDB");
-      ds.setCreateDatabase("create");
-      return ds;
-    }
-
-    @Override
-    public void createDatabase(DataSource dataSource) throws Exception {
-      Connection con = dataSource.getConnection();
-      try {
-        tryUpdate(con, "drop table log");
-        update(con, "create table log (" +
-            "id int generated always as identity," +
-            "txt varchar(255), x int, primary key (id))");
         
-        tryUpdate(con, "drop table event");
-        update(con, "create table event (" +
-            "id int generated always as identity, " +
-            "entity_id int not null, " +
-            "type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
-            "payload varchar(4000) not null)");
-        update(con, "create index entity_lookup on event (entity_id asc, id desc)");
+        update(con, "drop table if exists orderline");
+        update(con, "drop table if exists `order`");
+        update(con, "drop table if exists product");
+        update(con, "create table product (" +
+        		"id int primary key, " +
+        		"name varchar(4000) not null, " +
+        		"quantity int not null) " +
+        		"engine = InnoDB");
+        update(con, "create table `order` (" +
+        		"id int auto_increment primary key) " +
+        		"engine = InnoDB");
+        update(con, "create table orderline (" +
+        		"id int auto_increment primary key," +
+        		"orderId int not null," +
+        		"productId int not null," +
+        		"foreign key (orderId) references `order` (id), " +
+        		"foreign key (productId) references product (id)) " +
+        		"engine = InnoDB");
       } finally {
         con.close();
       }
-    }
-
-    @Override
-    public void shutdownAll() {
-      try {
-        DriverManager.getConnection("jdbc:derby:;shutdown=true");
-      } catch (SQLException e) {}
     }
   },
   hsqldb(
@@ -128,6 +102,25 @@ public enum Database {
             "type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
             "payload varchar(4000) not null)");
         update(con, "create index entity_lookup on event (entity_id, id desc)");
+        
+        tryUpdate(con, "drop table orderline");
+        tryUpdate(con, "drop table \"order\"");
+        tryUpdate(con, "drop table product");
+        update(con, "create table product (" +
+            "id int not null, " +
+            "name varchar(4000) not null, " +
+            "quantity int not null, " +
+            "primary key (id))");
+        update(con, "create table \"order\" (" +
+            "id int generated always as identity, " +
+            "primary key (id))");
+        update(con, "create table orderline (" +
+            "id int generated always as identity, " +
+            "orderId int not null, " +
+            "productId int not null, " +
+            "primary key (id), " +
+            "foreign key (orderId) references \"order\" (id), " +
+            "foreign key (productId) references product (id))");
       } finally {
         con.close();
       }
@@ -164,6 +157,25 @@ public enum Database {
             "type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
             "payload varchar(4000) not null)");
         update(con, "create index entity_lookup on event (entity_id, id desc)");
+        
+        tryUpdate(con, "drop table orderline");
+        tryUpdate(con, "drop table \"order\"");
+        tryUpdate(con, "drop table product");
+        update(con, "create table product (" +
+            "id int not null, " +
+            "name varchar(4000) not null, " +
+            "quantity int not null, " +
+            "primary key (id))");
+        update(con, "create table \"order\" (" +
+            "id int generated always as identity, " +
+            "primary key (id))");
+        update(con, "create table orderline (" +
+            "id int generated always as identity, " +
+            "orderId int not null, " +
+            "productId int not null, " +
+            "primary key (id), " +
+            "foreign key (orderId) references \"order\" (id), " +
+            "foreign key (productId) references product (id))");
       } finally {
         con.close();
       }

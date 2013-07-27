@@ -1,27 +1,24 @@
-package macros.database.simpleinsert;
+package macros.database.shoppingcart;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
-
 import macros.database.Database;
+import macros.database.MultiThreadedBenchmark;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.benchkit.Benchmark;
 import org.benchkit.BenchmarkRunner;
 import org.benchkit.Param;
 import org.benchkit.Recorder;
@@ -30,11 +27,11 @@ import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
 import org.benchkit.htmlchartsreporter.LatencyHistogramChart;
 import org.benchkit.htmlchartsreporter.ThroughputChart;
 
-public class SimpleInsertionBenchmark implements Benchmark {
+public class ShoppingCartBenchmark extends MultiThreadedBenchmark {
   
   private static final class Interpretor implements DataInterpretor {
     public String getBenchmarkName(Object[] args) {
-      return "SimpleInsertionBenchmark";
+      return "Shopping Cart Benchmark";
     }
 
     @SuppressWarnings("unchecked")
@@ -55,9 +52,9 @@ public class SimpleInsertionBenchmark implements Benchmark {
   private Database database;
   private DataSource dataSource;
   private ExecutorService executor;
-  private Inserter inserter;
+  private ShoppingCartWork work;
 
-  public SimpleInsertionBenchmark(
+  public ShoppingCartBenchmark(
       @Param(value = "fixture", defaults = "hibernate,stormpot") Fixture fixture,
       @Param(value = "threads", defaults = "1,2,3,4,5,6,7,8") int threads,
       @Param(value = "poolSize", defaults = "10") int poolSize,
@@ -75,7 +72,7 @@ public class SimpleInsertionBenchmark implements Benchmark {
     dataSource = database.createDataSource();
     executor = Executors.newCachedThreadPool();
     database.createDatabase(dataSource);
-    inserter = fixture.init(database, poolSize);
+    work = fixture.init(database, poolSize);
   }
 
   @Override
@@ -84,69 +81,55 @@ public class SimpleInsertionBenchmark implements Benchmark {
     if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
       throw new IllegalStateException("Executor did not shut down fast enough");
     }
-    inserter.close();
+    work.close();
     database.shutdownAll();
   }
 
   @Override
   public void runSession(Recorder mainRecorder) throws Exception {
-    clearDatabase();
-    CountDownLatch startLatch = new CountDownLatch(1);
-    List<Future<Recorder>> recorders = startWorkers(mainRecorder, startLatch);
-    Thread.yield();
-    startLatch.countDown();
-    collectResults(mainRecorder, recorders);
+    prepareDatabase();
+    Runnable runnable = new Runnable() {
+      @Override
+      public void run() {
+        work.doWork();
+      }
+    };
+    doConcurrently(runnable, mainRecorder, executor, threads, iterations);
   }
 
-  private void clearDatabase() throws Exception {
+  private void prepareDatabase() throws Exception {
     Connection connection = dataSource.getConnection();
     try {
-      database.tryUpdate(connection, "truncate table log");
+      mysqlAnsiQuoteModeHack(connection);
+      connection.setAutoCommit(false);
+      database.update(connection, "delete from orderline");
+      database.update(connection, "delete from \"order\"");
+      database.update(connection, "delete from product");
+      
+      PreparedStatement insertProducts = connection.prepareStatement(
+          "insert into product (id, name, quantity) values (?, ?, ?)");
+      for (int i = 0; i < 1024; i++) {
+        insertProducts.setInt(1, i);
+        insertProducts.setString(2, UUID.randomUUID().toString());
+        insertProducts.setInt(3, 1000);
+        insertProducts.execute();
+      }
+      connection.commit();
     } finally {
       connection.close();
     }
   }
 
-  private List<Future<Recorder>> startWorkers(Recorder mainRecorder,
-      CountDownLatch startLatch) {
-    List<Future<Recorder>> recorders = new ArrayList<Future<Recorder>>();
-    for (int i = 0; i < threads; i++) {
-      Recorder recorder = mainRecorder.createBlankCopy();
-      Future<Recorder> futureRecorder =
-          executor.submit(createWorker(startLatch, recorder));
-      recorders.add(futureRecorder);
-    }
-    return recorders;
-  }
-
-  private Callable<Recorder> createWorker(
-      final CountDownLatch startLatch,
-      final Recorder recorder) {
-    return new Callable<Recorder>() {
-      @Override
-      public Recorder call() throws Exception {
-        startLatch.await();
-        runBenchmark(recorder);
-        return recorder;
-      }
-    };
-  }
-
-  private void collectResults(Recorder mainRecorder,
-      List<Future<Recorder>> recorders) throws InterruptedException,
-      ExecutionException {
-    for (Future<Recorder> futureRecorder : recorders) {
-      mainRecorder.add(futureRecorder.get());
+  public static void mysqlAnsiQuoteModeHack(Connection con) throws SQLException {
+    if (isMySQL(con)) {
+      Statement modeChange = con.createStatement();
+      modeChange.execute("SET SESSION SQL_MODE=ANSI_QUOTES");
+      modeChange.close();
     }
   }
 
-  private void runBenchmark(Recorder recorder) throws Exception {
-    String name = Thread.currentThread().getName();
-    long begin = recorder.begin();
-    for (int i = 0; i < iterations; i++) {
-      inserter.insertLogRow(name, i);
-      begin = recorder.record(begin);
-    }
+  public static boolean isMySQL(Connection con) {
+    return con instanceof com.mysql.jdbc.JDBC4Connection;
   }
 
   public static void main(String[] args) throws Exception {
@@ -154,17 +137,17 @@ public class SimpleInsertionBenchmark implements Benchmark {
     Logger.getRootLogger().setLevel(Level.OFF);
     
     HtmlChartsReporter chartReporter = new HtmlChartsReporter(
-        new Interpretor(), "Simple Concurrent Insertion [poolSize=%3$s, iterations=%4$s, database=%5$s]");
+        new Interpretor(), "Shopping Cart [poolSize=%3$s, iterations=%4$s, database=%5$s]");
     chartReporter.addChartRender(new ThroughputChart("Throughput", "Threads", "Ops/Sec"));
     chartReporter.addChartRender(new LatencyHistogramChart("Latency", "Threads"));
     int iterations = BenchmarkRunner.DEFAULT_ITERATIONS;
     int warmupIterations = BenchmarkRunner.DEFAULT_WARMUP_ITERATIONS;
     
     BenchmarkRunner.run(
-        SimpleInsertionBenchmark.class, chartReporter, iterations, warmupIterations);
+        ShoppingCartBenchmark.class, chartReporter, iterations, warmupIterations);
     
     String report = chartReporter.generateReport();
-    File file = new File("simple-concurrent-insertion.html");
+    File file = new File("shopping-cart.html");
     if (!file.exists()) file.createNewFile();
     Files.write(file.toPath(), report.getBytes("UTF-8"));
   }
