@@ -53,10 +53,14 @@ public enum Database {
         update(con, "create table product (" +
         		"id int primary key, " +
         		"name varchar(4000) not null, " +
-        		"quantity int not null) " +
+        		"quantity int not null," +
+        		"price int not null) " +
         		"engine = InnoDB");
         update(con, "create table `order` (" +
-        		"id int auto_increment primary key) " +
+        		"id int auto_increment primary key, " +
+        		"state int not null default 1, " + // 1 pending, 2 charged, 3 shipped
+        		"charge int not null default 0, " +
+        		"index (state)) " +
         		"engine = InnoDB");
         update(con, "create table orderline (" +
         		"id int auto_increment primary key," +
@@ -99,7 +103,7 @@ public enum Database {
         update(con, "create table event (" +
             "id int generated always as identity, " +
             "entity_id int not null, " +
-            "type int not null, " + // 1 = snapshot, 2 = update, 3 = delete.
+            "type int not null, " + // 1 snapshot, 2 update, 3 delete.
             "payload varchar(4000) not null)");
         update(con, "create index entity_lookup on event (entity_id, id desc)");
         
@@ -110,10 +114,14 @@ public enum Database {
             "id int not null, " +
             "name varchar(4000) not null, " +
             "quantity int not null, " +
+            "price int not null, " +
             "primary key (id))");
         update(con, "create table \"order\" (" +
             "id int generated always as identity, " +
+            "state int default 1 not null, " + // 1 pending, 2 charged, 3 shipped
+            "charge int default 0 not null, " +
             "primary key (id))");
+        update(con, "create index order_state_idx on \"order\" (state)");
         update(con, "create table orderline (" +
             "id int generated always as identity, " +
             "orderId int not null, " +
@@ -165,10 +173,14 @@ public enum Database {
             "id int not null, " +
             "name varchar(4000) not null, " +
             "quantity int not null, " +
+            "price int not null, " +
             "primary key (id))");
         update(con, "create table \"order\" (" +
             "id int generated always as identity, " +
+            "state int default 1 not null, " + // 1 pending, 2 charged, 3 shipped
+            "charge int default 0 not null, " +
             "primary key (id))");
+        update(con, "create index order_state_idx on \"order\" (state)");
         update(con, "create table orderline (" +
             "id int generated always as identity, " +
             "orderId int not null, " +

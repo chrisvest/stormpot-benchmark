@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -73,6 +74,8 @@ public class ShoppingCartBenchmark extends MultiThreadedBenchmark {
     executor = Executors.newCachedThreadPool();
     database.createDatabase(dataSource);
     work = fixture.init(database, poolSize);
+    System.out.printf("Benchmarking %s threads doing %s iterations with %s on %s\n",
+        threads, iterations, fixture, database);
   }
 
   @Override
@@ -106,12 +109,14 @@ public class ShoppingCartBenchmark extends MultiThreadedBenchmark {
       database.update(connection, "delete from \"order\"");
       database.update(connection, "delete from product");
       
+      Random rnd = new Random(1234);
       PreparedStatement insertProducts = connection.prepareStatement(
-          "insert into product (id, name, quantity) values (?, ?, ?)");
+          "insert into product (id, name, quantity, price) values (?, ?, ?, ?)");
       for (int i = 0; i < 1024; i++) {
         insertProducts.setInt(1, i);
         insertProducts.setString(2, UUID.randomUUID().toString());
         insertProducts.setInt(3, 1000);
+        insertProducts.setInt(4, 10 + rnd.nextInt(90));
         insertProducts.execute();
       }
       connection.commit();

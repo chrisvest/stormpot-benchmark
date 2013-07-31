@@ -38,24 +38,6 @@ public class StormpotShoppingCart implements ShoppingCartWork {
   }
   
   public static class Product extends Entity {
-    private String name;
-    private int quantity;
-    
-    public String getName() {
-      return name;
-    }
-    
-    public void setName(String name) {
-      this.name = name;
-    }
-    
-    public int getQuantity() {
-      return quantity;
-    }
-    
-    public void setQuantity(int quantity) {
-      this.quantity = quantity;
-    }
   }
   
   public static class OrderLine extends Entity {
@@ -85,25 +67,57 @@ public class StormpotShoppingCart implements ShoppingCartWork {
     private final PreparedStatement insertOrder;
     private final PreparedStatement selectProduct;
     private final PreparedStatement insertOrderLine;
-    private final PreparedStatement reduceProductQuantity;
+    private final PreparedStatement reduceProductQuantities;
+    private final PreparedStatement chargePendingOrders;
+    private final PreparedStatement shipChargedOrders;
     
     public Dao(Connection con, Slot slot) throws SQLException {
       this.con = con;
       this.slot = slot;
       con.setAutoCommit(false);
       String insertOrderSql = "insert into \"order\" default values";
+      String chargePendingOrdersSql =
+          "update \"order\" as o " +
+          "set state = 2, " +
+          "charge = (" +
+          "  select sum(p.price) " +
+          "  from orderline ol " +
+          "  inner join product p on (p.id = ol.productId) " +
+          "  where ol.orderId = o.id) " +
+          "where o.state = 1";
+      String reduceProductQuantitiesSql =
+          "update product p " +
+          "set quantity = quantity - (" +
+          "  select count(ol.id) " +
+          "  from orderline ol, \"order\" o " +
+          "  where ol.orderId = o.id " +
+          "    and o.state = 2 " +
+          "    and ol.productId = p.id) " +
+          "where p.id in (" +
+          "  select distinct ol.productId " +
+          "  from orderline ol, \"order\" o" +
+          "  where ol.orderId = o.id " +
+          "    and o.state = 2)";
+      String shipChargedOrdersSql =
+          "update \"order\" set state = 3 where state = 2";
+      
       if (ShoppingCartBenchmark.isMySQL(con)) {
         insertOrderSql = "insert into `order` () values ()";
+        chargePendingOrdersSql = chargePendingOrdersSql.replace('"', '`');
+        reduceProductQuantitiesSql = reduceProductQuantitiesSql.replace('"', '`');
+        shipChargedOrdersSql = shipChargedOrdersSql.replace('"', '`');
       }
+      
       insertOrder = con.prepareStatement(
           insertOrderSql, Statement.RETURN_GENERATED_KEYS);
       selectProduct = con.prepareStatement(
-          "select id, name, quantity from product where id = ?");
+          "select id, name, quantity, price from product where id = ?");
       insertOrderLine = con.prepareStatement(
           "insert into orderline (orderId, productId) values (?, ?)",
           Statement.RETURN_GENERATED_KEYS);
-      reduceProductQuantity = con.prepareStatement(
-          "update product set quantity = quantity - 1 where id = ?");
+      reduceProductQuantities = con.prepareStatement(reduceProductQuantitiesSql);
+      chargePendingOrders = con.prepareStatement(chargePendingOrdersSql);
+      shipChargedOrders = con.prepareStatement(shipChargedOrdersSql);
     }
 
     @Override
@@ -123,22 +137,25 @@ public class StormpotShoppingCart implements ShoppingCartWork {
       con.commit();
     }
 
-    public void create(Order order) throws SQLException {
+    public void createOrder(Order order) throws SQLException {
       insertOrder.execute();
       setKey(order, insertOrder);
     }
 
     private void setKey(Entity entity, Statement stmt) throws SQLException {
       ResultSet keys = stmt.getGeneratedKeys();
-      String entityType = entity.getClass().getSimpleName();
       if (keys.next()) {
         entity.setId(keys.getInt(1));
       } else {
-        System.err.println("No key generated for " + entityType + "!");
+        System.err.println("No key generated for " + typeOf(entity) + "!");
       }
       if (keys.next()) {
-        System.err.println("More than one key generated for " + entityType + "!");
+        System.err.println("More than one key generated for " + typeOf(entity) + "!");
       }
+    }
+
+    private String typeOf(Entity entity) {
+      return entity.getClass().getSimpleName();
     }
 
     public Product getProduct(int productId) throws SQLException {
@@ -147,25 +164,29 @@ public class StormpotShoppingCart implements ShoppingCartWork {
       if (result.next()) {
         Product product = new Product();
         product.setId(result.getInt("id"));
-        product.setName(result.getString("name"));
-        product.setQuantity(result.getInt("quantity"));
         return product;
       }
       System.err.println("No such product: " + productId);
       return null;
     }
 
-    public void create(OrderLine orderLine) throws SQLException {
+    public void createOrderLine(OrderLine orderLine) throws SQLException {
       insertOrderLine.setInt(1, orderLine.getOrder().getId());
       insertOrderLine.setInt(2, orderLine.getProduct().getId());
       insertOrderLine.execute();
       setKey(orderLine, insertOrderLine);
     }
 
-    public void reduceQuantity(Product product) throws SQLException {
-      reduceProductQuantity.setInt(1, product.getId());
-      reduceProductQuantity.execute();
-      product.setQuantity(product.getQuantity() - 1);
+    public void chargePendingOrders() throws SQLException {
+      chargePendingOrders.execute();
+    }
+
+    public void reduceProductQuantities() throws SQLException {
+      reduceProductQuantities.execute();
+    }
+
+    public void shipChargedOrders() throws SQLException {
+      shipChargedOrders.execute();
     }
   }
 
@@ -189,13 +210,55 @@ public class StormpotShoppingCart implements ShoppingCartWork {
     });
     pool = new BlazePool<Dao>(config);
   }
+  
+  private static interface Work {
+    void doWork(Dao dao) throws Exception;
+  }
 
+  private final Work placeOrder = new Work() {
+    public void doWork(Dao dao) throws Exception {
+      XorShiftRandom rng = new XorShiftRandom(seeder.nextInt());
+      Order order = new Order();
+      dao.createOrder(order);
+      for (int i = 0; i < 10; i++) {
+        Product product = dao.getProduct(rng.nextInt() & 1023);
+        OrderLine orderLine = new OrderLine();
+        orderLine.setOrder(order);
+        orderLine.setProduct(product);
+        dao.createOrderLine(orderLine);
+      }
+    }
+  };
+  
+  private final Work chargeOrders = new Work() {
+    public void doWork(Dao dao) throws Exception {
+      dao.chargePendingOrders();
+    }
+  };
+  
+  private final Work shipOrders = new Work() {
+    public void doWork(Dao dao) throws Exception {
+      dao.reduceProductQuantities();
+      dao.shipChargedOrders();
+    }
+  };
+  
   @Override
   public void doWork() {
+    doTransaction(placeOrder);
+    if (seeder.nextInt(100) < 20) {
+      doTransaction(chargeOrders);
+    }
+    if (seeder.nextInt(100) < 10) {
+      doTransaction(shipOrders);
+    }
+  }
+
+  private void doTransaction(Work work) {
     Dao dao = null;
     try {
       dao = pool.claim(timeout);
-      doWork(dao);
+      work.doWork(dao);
       dao.commit();
     } catch (Exception e) {
       System.err.println(e.getMessage());
@@ -210,20 +273,6 @@ public class StormpotShoppingCart implements ShoppingCartWork {
       if (dao != null) {
         dao.release();
       }
-    }
-  }
-
-  private void doWork(Dao dao) throws Exception {
-    XorShiftRandom rng = new XorShiftRandom(seeder.nextInt());
-    Order order = new Order();
-    dao.create(order);
-    for (int i = 0; i < 10; i++) {
-      Product product = dao.getProduct(rng.nextInt() & 1023);
-      OrderLine orderLine = new OrderLine();
-      orderLine.setOrder(order);
-      orderLine.setProduct(product);
-      dao.create(orderLine);
-      dao.reduceQuantity(product);
     }
   }
 
