@@ -25,6 +25,7 @@ import org.benchkit.Benchmark;
 import org.benchkit.BenchmarkRunner;
 import org.benchkit.Param;
 import org.benchkit.Recorder;
+import org.benchkit.WarmupPrintingReporter;
 import org.benchkit.htmlchartsreporter.DataInterpretor;
 import org.benchkit.htmlchartsreporter.HtmlChartsReporter;
 import org.benchkit.htmlchartsreporter.LatencyHistogramChart;
@@ -159,7 +160,9 @@ public class SimpleInsertionBenchmark implements Benchmark {
     chartReporter.addChartRender(new LatencyHistogramChart("Latency", "Threads"));
     int iterations = BenchmarkRunner.DEFAULT_ITERATIONS;
     int warmupIterations = BenchmarkRunner.DEFAULT_WARMUP_ITERATIONS;
-    
+
+    BenchmarkRunner.run(
+        SimpleInsertionBenchmark.class, new WarmupPrintingReporter(), 1, 3);
     BenchmarkRunner.run(
         SimpleInsertionBenchmark.class, chartReporter, iterations, warmupIterations);
     
