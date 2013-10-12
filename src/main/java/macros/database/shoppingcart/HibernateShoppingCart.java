@@ -3,6 +3,7 @@ package macros.database.shoppingcart;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -229,29 +230,34 @@ public class HibernateShoppingCart implements ShoppingCartWork {
       }
     }
   };
+  private AtomicInteger errorCounter = new AtomicInteger();
 
   @Override
   public void doWork() {
     Session session = sessionFactory.openSession();
     try {
-      doTransaction(session, placeOrder);
-      if (seeder.nextInt(100) < 20) {
-        doTransaction(session, chargeOrders);
-      }
-      if (seeder.nextInt(100) < 10) {
-        doTransaction(session, shipOrders);
+      int r = seeder.nextInt(100);
+      if (r < 10) {
+        doTransaction(session, placeOrder, chargeOrders, shipOrders);
+      } else if (r < 20) {
+        doTransaction(session, placeOrder, chargeOrders);
+      } else {
+        doTransaction(session, placeOrder);
       }
     } finally {
       session.close();
     }
   }
 
-  private void doTransaction(Session session, Work work) {
+  private void doTransaction(Session session, Work... works) {
     Transaction tx = session.beginTransaction();
     try {
-      work.doWork(session);
+      for (Work work : works) {
+        work.doWork(session);
+      }
       tx.commit();
     } catch (Exception e) {
+      errorCounter.incrementAndGet();
       System.err.println(e.getMessage());
       tx.rollback();
     }
@@ -259,6 +265,7 @@ public class HibernateShoppingCart implements ShoppingCartWork {
 
   @Override
   public void close() {
+    System.out.println("Error Count [Hibernate] = " + errorCounter.get());
     sessionFactory.close();
   }
 }

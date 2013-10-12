@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
@@ -243,24 +244,30 @@ public class StormpotShoppingCart implements ShoppingCartWork {
     }
   };
   
+  private AtomicInteger errorCounter = new AtomicInteger();
+  
   @Override
   public void doWork() {
-    doTransaction(placeOrder);
-    if (seeder.nextInt(100) < 20) {
-      doTransaction(chargeOrders);
-    }
-    if (seeder.nextInt(100) < 10) {
-      doTransaction(shipOrders);
+    int r = seeder.nextInt(100);
+    if (r < 10) {
+      doTransaction(placeOrder, chargeOrders, shipOrders);
+    } else if (r < 20) {
+      doTransaction(placeOrder, chargeOrders);
+    } else {
+      doTransaction(placeOrder);
     }
   }
 
-  private void doTransaction(Work work) {
+  private void doTransaction(Work... works) {
     Dao dao = null;
     try {
       dao = pool.claim(timeout);
-      work.doWork(dao);
+      for (Work work : works) {
+        work.doWork(dao);
+      }
       dao.commit();
     } catch (Exception e) {
+      errorCounter.incrementAndGet();
       System.err.println(e.getMessage());
       if (dao != null) {
         try {
@@ -278,6 +285,7 @@ public class StormpotShoppingCart implements ShoppingCartWork {
 
   @Override
   public void close() {
+    System.out.println("Error Count [Stormpot] = " + errorCounter.get());
     try {
       pool.shutdown().await(timeout);
     } catch (InterruptedException e) {
